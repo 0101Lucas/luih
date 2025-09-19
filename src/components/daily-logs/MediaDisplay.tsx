@@ -7,9 +7,10 @@ import { cn } from "@/lib/utils";
 interface MediaDisplayProps {
   items: MediaItem[];
   className?: string;
+  onMediaClick?: (media: { url: string; type: 'photo' | 'video' }) => void;
 }
 
-export function MediaDisplay({ items, className }: MediaDisplayProps) {
+export function MediaDisplay({ items, className, onMediaClick }: MediaDisplayProps) {
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
 
   if (!items || items.length === 0) {
@@ -57,7 +58,10 @@ export function MediaDisplay({ items, className }: MediaDisplayProps) {
               className="relative group border border-border rounded-lg overflow-hidden bg-muted"
             >
               {item.type === 'photo' ? (
-                <div className="aspect-video relative">
+                <div 
+                  className="aspect-video relative cursor-pointer"
+                  onClick={() => onMediaClick?.({ url: item.url, type: 'photo' })}
+                >
                   {!hasError ? (
                     <img
                       src={publicUrl}
@@ -76,7 +80,10 @@ export function MediaDisplay({ items, className }: MediaDisplayProps) {
                   )}
                 </div>
               ) : (
-                <div className="aspect-video relative">
+                <div 
+                  className="aspect-video relative cursor-pointer"
+                  onClick={() => onMediaClick?.({ url: item.url, type: 'video' })}
+                >
                   <video
                     controls
                     className="w-full h-full object-cover"
