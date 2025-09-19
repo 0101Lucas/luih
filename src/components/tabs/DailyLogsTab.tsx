@@ -1,107 +1,92 @@
-import { useState } from "react";
-import { Plus, Search, Filter, Calendar, User, FileText, Camera, Edit, Trash2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Plus, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useAppStore } from "@/store/app";
-
-interface DailyLog {
-  id: string;
-  date: string;
-  author: string;
-  title: string;
-  content: string;
-  type: "progress" | "delay" | "inspection" | "safety" | "weather";
-  attachments: number;
-}
-
-const mockLogs: DailyLog[] = [
-  {
-    id: "1",
-    date: "2024-01-15",
-    author: "John Smith",
-    title: "Framing Progress Update",
-    content: "Completed framing for the second floor. All walls are up and square. Ready for electrical rough-in tomorrow.",
-    type: "progress",
-    attachments: 3,
-  },
-  {
-    id: "2",
-    date: "2024-01-14",
-    author: "Sarah Johnson",
-    title: "Weather Delay",
-    content: "Heavy rain prevented concrete pour. Rescheduled for tomorrow morning. All materials covered and protected.",
-    type: "weather",
-    attachments: 1,
-  },
-  {
-    id: "3",
-    date: "2024-01-13",
-    author: "Mike Davis",
-    title: "Safety Inspection Completed",
-    content: "OSHA safety inspection passed with no violations. Team commended for excellent safety practices.",
-    type: "safety",
-    attachments: 2,
-  },
-];
+import { listDailyLogFeed, FeedItem } from "@/lib/db/dailyLogs";
+import { DailyLogsFilters } from "@/components/daily-logs/DailyLogsFilters";
+import { LogNoteCard } from "@/components/daily-logs/LogNoteCard";
+import { TodoExecutionCard } from "@/components/daily-logs/TodoExecutionCard";
+import { CreateNoteModal } from "@/components/daily-logs/CreateNoteModal";
+import { ExecutionReportSheet } from "@/components/daily-logs/ExecutionReportSheet";
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 
 export function DailyLogsTab() {
   const { selectedProject } = useAppStore();
+  const { toast } = useToast();
+  const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
+  const [loading, setLoading] = useState(false);
   const [searchValue, setSearchValue] = useState("");
+  const [dateFrom, setDateFrom] = useState(() => format(new Date(), 'yyyy-MM-dd'));
+  const [dateTo, setDateTo] = useState(() => format(new Date(), 'yyyy-MM-dd'));
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newLog, setNewLog] = useState({
-    title: "",
-    content: "",
-    type: "progress" as const,
-  });
+  const [showExecutionReport, setShowExecutionReport] = useState(false);
+  const [selectedTodoId, setSelectedTodoId] = useState<string | null>(null);
+  const [selectedTodoTitle, setSelectedTodoTitle] = useState<string | undefined>();
 
-  const filteredLogs = mockLogs.filter((log) =>
-    log.title.toLowerCase().includes(searchValue.toLowerCase()) ||
-    log.content.toLowerCase().includes(searchValue.toLowerCase()) ||
-    log.author.toLowerCase().includes(searchValue.toLowerCase())
-  );
+  useEffect(() => {
+    if (selectedProject?.id) {
+      loadFeed();
+    }
+  }, [selectedProject, dateFrom, dateTo]);
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case "progress":
-        return "bg-success text-success-foreground";
-      case "delay":
-        return "bg-warning text-warning-foreground";
-      case "inspection":
-        return "bg-primary text-primary-foreground";
-      case "safety":
-        return "bg-accent text-accent-foreground";
-      case "weather":
-        return "bg-muted text-muted-foreground";
-      default:
-        return "bg-secondary text-secondary-foreground";
+  const loadFeed = async () => {
+    if (!selectedProject?.id) return;
+
+    setLoading(true);
+    try {
+      const data = await listDailyLogFeed(selectedProject.id, {
+        from: dateFrom,
+        to: dateTo,
+        search: searchValue || undefined,
+      });
+      setFeedItems(data);
+    } catch (error) {
+      console.error('Error loading feed:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load daily logs",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleCreateLog = () => {
-    console.log("Creating log:", newLog);
-    setShowCreateModal(false);
-    setNewLog({ title: "", content: "", type: "progress" });
+  const handleSearch = (value: string) => {
+    setSearchValue(value);
+    // Debounce search or trigger immediately for demo
+    setTimeout(() => {
+      if (selectedProject?.id) {
+        loadFeed();
+      }
+    }, 300);
   };
+
+  const handleFillReport = (todoId: string) => {
+    const item = feedItems.find(item => item.todo_id === todoId);
+    setSelectedTodoId(todoId);
+    setSelectedTodoTitle(item?.todo_title);
+    setShowExecutionReport(true);
+  };
+
+  const handleSuccess = () => {
+    loadFeed(); // Refresh the feed
+  };
+
+  if (!selectedProject) {
+    return (
+      <div className="p-6">
+        <div className="text-center py-12">
+          <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-foreground mb-2">No Project Selected</h3>
+          <p className="text-muted-foreground">
+            Please select a project from the sidebar to view daily logs.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -109,156 +94,82 @@ export function DailyLogsTab() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-semibold text-foreground">Daily Logs</h2>
-          <p className="text-muted-foreground">Track daily progress and project updates</p>
+          <p className="text-muted-foreground">
+            Unified feed for {selectedProject.name} - Manual notes and to-do execution reports
+          </p>
         </div>
-        <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-          <DialogTrigger asChild>
-            <Button className="bg-primary hover:bg-primary-hover">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Log Entry
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Create Daily Log Entry</DialogTitle>
-              <DialogDescription>
-                Document today's progress and activities for {selectedProject?.name || 'this project'}.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="title">Entry Title</Label>
-                <Input
-                  id="title"
-                  value={newLog.title}
-                  onChange={(e) => setNewLog({ ...newLog, title: e.target.value })}
-                  placeholder="Brief description of today's work"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="type">Entry Type</Label>
-                <Select value={newLog.type} onValueChange={(value: any) => setNewLog({ ...newLog, type: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="progress">Progress Update</SelectItem>
-                    <SelectItem value="delay">Delay Report</SelectItem>
-                    <SelectItem value="inspection">Inspection</SelectItem>
-                    <SelectItem value="safety">Safety Report</SelectItem>
-                    <SelectItem value="weather">Weather Report</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="content">Details</Label>
-                <Textarea
-                  id="content"
-                  value={newLog.content}
-                  onChange={(e) => setNewLog({ ...newLog, content: e.target.value })}
-                  placeholder="Describe the work completed, challenges encountered, or other relevant information..."
-                  rows={4}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label>Attachments</Label>
-                <Button variant="outline" className="justify-start">
-                  <Camera className="h-4 w-4 mr-2" />
-                  Add Photos
-                </Button>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowCreateModal(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleCreateLog} className="bg-primary hover:bg-primary-hover">
-                Create Entry
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* Search and Filters */}
-      <div className="flex items-center space-x-4">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search log entries..."
-            value={searchValue}
-            onChange={(e) => setSearchValue(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <Button variant="outline" size="sm">
-          <Filter className="h-4 w-4 mr-2" />
-          Filter
+        <Button onClick={() => setShowCreateModal(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Create Log Entry
         </Button>
       </div>
 
-      {/* Daily Logs List */}
-      <div className="space-y-4">
-        {filteredLogs.map((log) => (
-          <Card key={log.id} className="hover:shadow-md transition-shadow">
-            <CardHeader className="pb-4">
-              <div className="flex items-start justify-between">
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-3">
-                    <CardTitle className="text-lg">{log.title}</CardTitle>
-                    <Badge className={`text-xs ${getTypeColor(log.type)}`}>
-                      {log.type}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                    <div className="flex items-center">
-                      <Calendar className="h-4 w-4 mr-1" />
-                      {log.date}
-                    </div>
-                    <div className="flex items-center">
-                      <User className="h-4 w-4 mr-1" />
-                      {log.author}
-                    </div>
-                    {log.attachments > 0 && (
-                      <div className="flex items-center">
-                        <Camera className="h-4 w-4 mr-1" />
-                        {log.attachments} photo{log.attachments > 1 ? 's' : ''}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Button variant="ghost" size="sm">
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-foreground leading-relaxed">{log.content}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {/* Filters */}
+      <DailyLogsFilters
+        searchValue={searchValue}
+        onSearchChange={handleSearch}
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        onDateFromChange={setDateFrom}
+        onDateToChange={setDateTo}
+      />
 
-      {filteredLogs.length === 0 && (
+      {/* Feed */}
+      {loading ? (
         <div className="text-center py-12">
-          <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-foreground mb-2">No log entries found</h3>
-          <p className="text-muted-foreground mb-4">
-            {searchValue ? "Try adjusting your search terms." : "Start by creating your first daily log entry."}
-          </p>
-          {!searchValue && (
-            <Button onClick={() => setShowCreateModal(true)} className="bg-primary hover:bg-primary-hover">
-              <Plus className="h-4 w-4 mr-2" />
-              Create First Entry
-            </Button>
-          )}
+          <div className="text-muted-foreground">Loading daily logs...</div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {feedItems.map((item) => {
+            if (item.kind === 'note') {
+              return <LogNoteCard key={item.entry_id} item={item} />;
+            } else {
+              return (
+                <TodoExecutionCard
+                  key={item.entry_id}
+                  item={item}
+                  onFillReport={handleFillReport}
+                />
+              );
+            }
+          })}
         </div>
       )}
+
+      {/* Empty State */}
+      {!loading && feedItems.length === 0 && (
+        <div className="text-center py-12">
+          <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-foreground mb-2">No entries found</h3>
+          <p className="text-muted-foreground mb-4">
+            {searchValue 
+              ? "Try adjusting your search terms or date range." 
+              : "Create your first log entry or check if there are any to-dos due in this date range."
+            }
+          </p>
+          <Button onClick={() => setShowCreateModal(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Create Log Entry
+          </Button>
+        </div>
+      )}
+
+      {/* Modals */}
+      <CreateNoteModal
+        open={showCreateModal}
+        onOpenChange={setShowCreateModal}
+        projectId={selectedProject.id}
+        onSuccess={handleSuccess}
+      />
+
+      <ExecutionReportSheet
+        open={showExecutionReport}
+        onOpenChange={setShowExecutionReport}
+        todoId={selectedTodoId}
+        todoTitle={selectedTodoTitle}
+        onSuccess={handleSuccess}
+      />
     </div>
   );
 }

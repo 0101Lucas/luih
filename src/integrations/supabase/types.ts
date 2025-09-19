@@ -446,6 +446,7 @@ export type Database = {
           review_status: string | null
           status: string | null
           title: string | null
+          todo_id: string | null
           todo_title: string | null
         }
         Relationships: []
