@@ -19,6 +19,151 @@ export type DayTodo = {
   media_today: Array<{ id: string; type: "photo"|"video"|"file"; url: string }> | null;
 };
 
+export type DayData = {
+  date: string;
+  formattedDate: string;
+  missingReports: number;
+  logs: DayLog[];
+  uncompleted: DayTodo[];
+  completed: DayTodo[];
+};
+
+export async function fetchDailyLogsFeed({
+  projectId,
+  daysBack = 7,
+}: { projectId: string; daysBack?: number; }) {
+  try {
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - daysBack);
+    
+    const endDateISO = endDate.toISOString().slice(0, 10);
+    const startDateISO = startDate.toISOString().slice(0, 10);
+
+    // Get all logs and execution reports in the date range
+    const { data: feedData, error: feedError } = await supabase
+      .from('v_daily_log_feed')
+      .select('*')
+      .eq('project_id', projectId)
+      .gte('entry_date', startDateISO)
+      .lte('entry_date', endDateISO)
+      .order('entry_date', { ascending: false });
+
+    if (feedError) throw feedError;
+
+    // Group data by date
+    const dayGroups = new Map<string, {
+      logs: any[];
+      todos: any[];
+    }>();
+
+    feedData?.forEach(item => {
+      const date = item.entry_date!;
+      if (!dayGroups.has(date)) {
+        dayGroups.set(date, { logs: [], todos: [] });
+      }
+      
+      const group = dayGroups.get(date)!;
+      if (item.kind === 'log') {
+        group.logs.push(item);
+      } else if (item.kind === 'execution_report') {
+        group.todos.push(item);
+      }
+    });
+
+    // Calculate missing reports for each day
+    const days: DayData[] = [];
+    
+    for (let i = 0; i < daysBack; i++) {
+      const currentDate = new Date();
+      currentDate.setDate(endDate.getDate() - i);
+      const dateISO = currentDate.toISOString().slice(0, 10);
+      
+      const dayGroup = dayGroups.get(dateISO) || { logs: [], todos: [] };
+      
+      // Calculate missing reports for this specific day
+      const { data: dueTodos, error: dueError } = await supabase
+        .from('to_dos')
+        .select(`
+          id, title,
+          execution_reports!left(id, status, created_at)
+        `)
+        .eq('project_id', projectId)
+        .lte('due_date', dateISO)
+        .eq('status', 'incomplete');
+
+      if (dueError) {
+        console.error('Error fetching due todos:', dueError);
+      }
+
+      const missingReports = dueTodos?.filter(todo => 
+        !todo.execution_reports || 
+        todo.execution_reports.length === 0 ||
+        !todo.execution_reports.some((report: any) => 
+          report.created_at?.slice(0, 10) === dateISO
+        )
+      ).length || 0;
+
+      // Transform logs data
+      const transformedLogs: DayLog[] = dayGroup.logs.map(log => ({
+        log_id: log.entry_id!,
+        title: log.title!,
+        body: log.body,
+        created_at: log.entry_date!,
+        author_name: log.created_by ? `User ${log.created_by.slice(0, 8)}` : null,
+        attachments: log.media_urls ? JSON.parse(log.media_urls as string) : null
+      }));
+
+      // Transform todos data
+      const uncompleted: DayTodo[] = [];
+      const completed: DayTodo[] = [];
+
+      dayGroup.todos.forEach(item => {
+        const todo: DayTodo = {
+          todo_id: item.todo_id!,
+          todo_title: item.todo_title!,
+          exec_status: item.status as "executed"|"partial"|"not_executed"|null,
+          exec_detail: item.detail,
+          reason_label: item.reason_label,
+          media_today: item.media_urls ? JSON.parse(item.media_urls as string) : null
+        };
+
+        if (item.status === 'executed') {
+          completed.push(todo);
+        } else {
+          uncompleted.push(todo);
+        }
+      });
+
+      const formattedDate = currentDate.toLocaleDateString("en-US", { 
+        weekday: "short", 
+        month: "short", 
+        day: "2-digit", 
+        year: "numeric" 
+      }).replace(/,/g, "");
+
+      days.push({
+        date: dateISO,
+        formattedDate,
+        missingReports,
+        logs: transformedLogs,
+        uncompleted,
+        completed,
+      });
+    }
+
+    return days.filter(day => 
+      day.logs.length > 0 || 
+      day.uncompleted.length > 0 || 
+      day.completed.length > 0 ||
+      day.missingReports > 0
+    );
+  } catch (error) {
+    console.error('Error fetching daily logs feed:', error);
+    return [];
+  }
+}
+
 export async function fetchDailyPage({
   projectId,
   dayISO,
