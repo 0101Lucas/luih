@@ -2,7 +2,7 @@ import React from "react";
 import MediaDisplay from "./MediaDisplay";
 
 export default function LogFeedEntry({ entry }: { entry: any }) {
-  const created = new Date(entry.created_at);
+  const created = new Date(entry.created_at + "T12:00:00");
   const time = created.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).toLowerCase();
 
   return (

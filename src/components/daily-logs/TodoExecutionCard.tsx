@@ -13,12 +13,17 @@ export default function TodoExecutionCard({
   media: Array<{ id: string; type: "photo"|"video"|"file"; url: string }>;
 }) {
   return (
-    <div className="space-y-1">
+    <div className="space-y-2 p-3 border rounded-lg bg-card">
       <div className="font-medium">{title} — {status}</div>
       {status !== "Executed" && (
         <div className="text-sm text-muted-foreground">Reason: {reason ?? "—"}</div>
       )}
-      {media?.length ? <MediaDisplay items={media} mode="preview-first" /> : null}
+      {media?.length ? (
+        <div className="space-y-1">
+          <div className="text-xs text-muted-foreground">Files:</div>
+          <MediaDisplay items={media} mode="preview-first" />
+        </div>
+      ) : null}
     </div>
   );
 }

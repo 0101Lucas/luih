@@ -105,8 +105,9 @@ export function CreateNoteModal({ open, onOpenChange, projectId, onSuccess }: Cr
       const files = fileItems.map(item => item.file);
       const result = await createDailyLog({
         projectId,
+        title: "Daily Log Entry",
+        body: comment,
         todoId: linkedTodoId,
-        comment,
         files,
       });
 
