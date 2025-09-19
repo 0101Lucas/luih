@@ -18,11 +18,11 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 8.9% 46.1%;
 
-    /* Primary brand - Professional blue */
-    --primary: 217 91% 60%;
+    /* Primary brand - Dark blue-gray */
+    --primary: 205 23% 29%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 217 91% 55%;
-    --primary-subtle: 217 91% 95%;
+    --primary-hover: 205 23% 25%;
+    --primary-subtle: 205 23% 95%;
 
     /* Secondary system */
     --secondary: 220 14.3% 95.9%;
@@ -33,11 +33,11 @@
     --muted: 220 14.3% 95.9%;
     --muted-foreground: 220 8.9% 46.1%;
 
-    /* Accent system - Construction orange */
-    --accent: 24 100% 50%;
-    --accent-foreground: 0 0% 100%;
-    --accent-hover: 24 100% 45%;
-    --accent-subtle: 24 100% 95%;
+    /* Accent system - Mint green */
+    --accent: 162 43% 72%;
+    --accent-foreground: 205 23% 29%;
+    --accent-hover: 162 43% 68%;
+    --accent-subtle: 162 43% 95%;
 
     /* Status colors */
     --success: 142 76% 36%;
@@ -50,12 +50,12 @@
     /* Border and input */
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 217 91% 60%;
+    --ring: 205 23% 29%;
 
     /* Toolbar and navigation */
     --toolbar: 220 8.9% 96.1%;
     --toolbar-foreground: 220 8.9% 46.1%;
-    --nav-active: 217 91% 60%;
+    --nav-active: 205 23% 29%;
     --nav-hover: 220 14.3% 95.9%;
 
     /* Sidebar */
@@ -92,11 +92,11 @@
     --popover: 220 8.9% 10%;
     --popover-foreground: 220 8.9% 95%;
 
-    /* Primary brand - Professional blue (adjusted for dark) */
-    --primary: 217 91% 65%;
-    --primary-foreground: 220 8.9% 8%;
-    --primary-hover: 217 91% 60%;
-    --primary-subtle: 217 91% 15%;
+    /* Primary brand - Dark blue-gray (adjusted for dark) */
+    --primary: 205 23% 45%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 205 23% 40%;
+    --primary-subtle: 205 23% 15%;
 
     /* Secondary system */
     --secondary: 220 8.9% 15%;
@@ -107,11 +107,11 @@
     --muted: 220 8.9% 15%;
     --muted-foreground: 220 8.9% 65%;
 
-    /* Accent system - Construction orange (adjusted for dark) */
-    --accent: 24 100% 55%;
+    /* Accent system - Mint green (adjusted for dark) */
+    --accent: 162 43% 65%;
     --accent-foreground: 220 8.9% 8%;
-    --accent-hover: 24 100% 50%;
-    --accent-subtle: 24 100% 15%;
+    --accent-hover: 162 43% 60%;
+    --accent-subtle: 162 43% 15%;
 
     /* Status colors */
     --success: 142 76% 45%;
@@ -124,12 +124,12 @@
     /* Border and input */
     --border: 220 8.9% 20%;
     --input: 220 8.9% 20%;
-    --ring: 217 91% 65%;
+    --ring: 205 23% 45%;
 
     /* Toolbar and navigation */
     --toolbar: 220 8.9% 12%;
     --toolbar-foreground: 220 8.9% 95%;
-    --nav-active: 217 91% 65%;
+    --nav-active: 205 23% 45%;
     --nav-hover: 220 8.9% 15%;
 
     /* Sidebar */
