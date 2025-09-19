@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAppStore } from "@/store/app";
+import { listProjects } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 interface ToolbarProps {
   activeTab: string;
@@ -31,14 +33,44 @@ const tabs = [
 
 export function Toolbar({ activeTab, onTabChange }: ToolbarProps) {
   const [searchValue, setSearchValue] = useState("");
+  const [isLoadingProject, setIsLoadingProject] = useState(false);
   const navigate = useNavigate();
-  const { selectedProject } = useAppStore();
+  const { selectedProject, setSelectedProject } = useAppStore();
+  const { toast } = useToast();
 
-  const handleProjectMenuClick = (section: string) => {
+  const handleProjectMenuClick = async (section: string) => {
     if (selectedProject) {
       navigate(`/projects/${selectedProject.id}/${section}`);
-    } else {
+      return;
+    }
+
+    // Auto-select first project if none selected
+    setIsLoadingProject(true);
+    try {
+      const projects = await listProjects();
+      if (projects.length === 0) {
+        navigate('/projects');
+        toast({
+          title: "No projects found",
+          description: "Create a project first to access project management features.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const firstProject = projects[0];
+      setSelectedProject(firstProject);
+      navigate(`/projects/${firstProject.id}/${section}`);
+    } catch (error) {
+      console.error('Failed to load projects:', error);
       navigate('/projects');
+      toast({
+        title: "Error loading projects",
+        description: "Please try again or select a project manually.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingProject(false);
     }
   };
 
@@ -79,28 +111,52 @@ export function Toolbar({ activeTab, onTabChange }: ToolbarProps) {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56">
-                    <DropdownMenuItem onClick={() => handleProjectMenuClick("schedule")}>
+                    <DropdownMenuItem 
+                      onClick={() => handleProjectMenuClick("schedule")}
+                      disabled={isLoadingProject}
+                    >
                       Schedule
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleProjectMenuClick("daily-logs")}>
+                    <DropdownMenuItem 
+                      onClick={() => handleProjectMenuClick("daily-logs")}
+                      disabled={isLoadingProject}
+                    >
                       Daily Logs
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleProjectMenuClick("todos")}>
+                    <DropdownMenuItem 
+                      onClick={() => handleProjectMenuClick("todos")}
+                      disabled={isLoadingProject}
+                    >
                       To-Do's
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleProjectMenuClick("change-orders")}>
+                    <DropdownMenuItem 
+                      onClick={() => handleProjectMenuClick("change-orders")}
+                      disabled={isLoadingProject}
+                    >
                       Change Orders
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleProjectMenuClick("selections")}>
+                    <DropdownMenuItem 
+                      onClick={() => handleProjectMenuClick("selections")}
+                      disabled={isLoadingProject}
+                    >
                       Selections
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleProjectMenuClick("warranties")}>
+                    <DropdownMenuItem 
+                      onClick={() => handleProjectMenuClick("warranties")}
+                      disabled={isLoadingProject}
+                    >
                       Warranties
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleProjectMenuClick("time-clock")}>
+                    <DropdownMenuItem 
+                      onClick={() => handleProjectMenuClick("time-clock")}
+                      disabled={isLoadingProject}
+                    >
                       Time Clock
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleProjectMenuClick("client-updates")}>
+                    <DropdownMenuItem 
+                      onClick={() => handleProjectMenuClick("client-updates")}
+                      disabled={isLoadingProject}
+                    >
                       Client Updates
                     </DropdownMenuItem>
                   </DropdownMenuContent>
