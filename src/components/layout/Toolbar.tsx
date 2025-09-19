@@ -22,7 +22,6 @@ interface ToolbarProps {
 }
 
 const tabs = [
-  { id: "home", label: "Home" },
   { id: "sales", label: "Sales" },
   { id: "project-management", label: "Project Management", hasSubmenu: true },
   { id: "files", label: "Files" },
