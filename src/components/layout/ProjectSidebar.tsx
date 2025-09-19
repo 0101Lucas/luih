@@ -251,9 +251,6 @@ export function ProjectSidebar() {
                   <h3 className="font-medium text-sm truncate">
                     {project.name}
                   </h3>
-                  {project.external_ref && (
-                    <p className="text-xs opacity-75 truncate">{project.external_ref}</p>
-                  )}
                 </div>
               </div>
             </div>
