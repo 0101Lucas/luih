@@ -115,24 +115,24 @@ function TasksSection({ uncompleted, completed }: { uncompleted: any[]; complete
   }
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-3">
       {/* Uncompleted Tasks */}
       {uncompleted.length > 0 && (
-        <div className="space-y-3">
+        <div className="space-y-2">
           <button 
-            className="w-full flex items-center justify-between text-left py-2 hover:bg-muted/50 rounded px-2 transition-colors" 
+            className="text-left hover:underline" 
             onClick={() => setOpenUncompleted(v => !v)}
           >
-            <span className="font-medium text-foreground">
+            <span className="font-medium">
               Uncompleted To-Do's ({uncompleted.length}) {openUncompleted ? "▾" : "▸"}
             </span>
           </button>
           {openUncompleted && (
-            <div className="space-y-3 pl-2">
-              {uncompleted.map((todo) => (
-                <div key={todo.todo_id} className="space-y-2">
+            <div className="space-y-2">
+              {uncompleted.map((todo, index) => (
+                <div key={todo.todo_id}>
                   <div className="font-medium">
-                    {todo.todo_title} — {formatStatus(todo.exec_status)}
+                    {index + 1}) {todo.todo_title} — {formatStatus(todo.exec_status)}
                   </div>
                   {todo.reason_label && (
                     <div className="text-sm text-muted-foreground">
@@ -142,19 +142,17 @@ function TasksSection({ uncompleted, completed }: { uncompleted: any[]; complete
                   {todo.media_today?.length > 0 && (
                     <div className="text-sm">
                       <span className="text-muted-foreground">Files: </span>
-                      <div className="inline-flex gap-1 flex-wrap">
-                        {todo.media_today.map((media: any, idx: number) => (
-                          <a 
-                            key={idx}
-                            href={media.url} 
-                            target="_blank" 
-                            rel="noreferrer"
-                            className="inline-block px-2 py-1 bg-muted rounded text-xs hover:bg-muted/80"
-                          >
-                            [{media.type === 'photo' ? '📷' : media.type === 'video' ? '🎬' : '📄'} {media.url.split('/').pop()?.split('.')[0] || 'file'}]
-                          </a>
-                        ))}
-                      </div>
+                      {todo.media_today.map((media: any, idx: number) => (
+                        <a 
+                          key={idx}
+                          href={media.url} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          className="inline-block px-1 py-0.5 bg-muted rounded text-xs hover:bg-muted/80 mr-1"
+                        >
+                          [ {media.url.split('/').pop()?.split('.')[0] || 'file'} ]
+                        </a>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -166,20 +164,20 @@ function TasksSection({ uncompleted, completed }: { uncompleted: any[]; complete
 
       {/* Completed Tasks */}
       {completed.length > 0 && (
-        <div className="space-y-3">
+        <div className="space-y-2">
           <button 
-            className="w-full flex items-center justify-between text-left py-2 hover:bg-muted/50 rounded px-2 transition-colors" 
+            className="text-left hover:underline" 
             onClick={() => setOpenCompleted(v => !v)}
           >
-            <span className="font-medium text-foreground">
+            <span className="font-medium">
               Completed To-Do's ({completed.length}) {openCompleted ? "▾" : "▸"}
             </span>
           </button>
           {openCompleted && (
-            <div className="space-y-2 pl-2">
-              {completed.map((todo) => (
+            <div className="space-y-1">
+              {completed.map((todo, index) => (
                 <div key={todo.todo_id} className="font-medium">
-                  {todo.todo_title} — Executed
+                  {index + 1}) {todo.todo_title} — Executed
                 </div>
               ))}
             </div>
