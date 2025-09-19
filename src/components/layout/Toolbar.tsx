@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Search, Plus, Bell, MessageCircle, User, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAppStore } from "@/store/app";
 
 interface ToolbarProps {
   activeTab: string;
@@ -29,6 +31,16 @@ const tabs = [
 
 export function Toolbar({ activeTab, onTabChange }: ToolbarProps) {
   const [searchValue, setSearchValue] = useState("");
+  const navigate = useNavigate();
+  const { selectedProject } = useAppStore();
+
+  const handleProjectMenuClick = (section: string) => {
+    if (selectedProject) {
+      navigate(`/projects/${selectedProject.id}/${section}`);
+    } else {
+      navigate('/projects');
+    }
+  };
 
   return (
     <div className="h-toolbar bg-toolbar border-b border-border flex items-center justify-between px-6">
@@ -67,21 +79,29 @@ export function Toolbar({ activeTab, onTabChange }: ToolbarProps) {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56">
-                    <DropdownMenuItem onClick={() => onTabChange("overview")}>
-                      Overview
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onTabChange("daily-logs")}>
-                      Daily Logs
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onTabChange("todos")}>
-                      To-Do's
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => onTabChange("schedule")}>
+                    <DropdownMenuItem onClick={() => handleProjectMenuClick("schedule")}>
                       Schedule
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onTabChange("change-orders")}>
+                    <DropdownMenuItem onClick={() => handleProjectMenuClick("daily-logs")}>
+                      Daily Logs
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleProjectMenuClick("todos")}>
+                      To-Do's
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleProjectMenuClick("change-orders")}>
                       Change Orders
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleProjectMenuClick("selections")}>
+                      Selections
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleProjectMenuClick("warranties")}>
+                      Warranties
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleProjectMenuClick("time-clock")}>
+                      Time Clock
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleProjectMenuClick("client-updates")}>
+                      Client Updates
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
