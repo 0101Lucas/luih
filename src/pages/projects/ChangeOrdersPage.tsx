@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
-import { ProjectSidebar } from "@/components/layout/ProjectSidebar";
+import { ProjectShell } from "@/components/layout/ProjectShell";
 import { ProjectHeader } from "@/components/layout/ProjectHeader";
 import { ComingSoonTab } from "@/components/tabs/ComingSoonTab";
 import { useAppStore } from "@/store/app";
@@ -17,14 +17,13 @@ export function ChangeOrdersPage() {
   }, [selectedProject, projectId, navigate]);
 
   return (
-    <div className="flex-1 flex overflow-hidden">
-      <ProjectSidebar />
-      <div className="flex-1 flex flex-col bg-background">
+    <ProjectShell>
+      <div className="flex flex-col h-full">
         <ProjectHeader />
         <div className="flex-1 overflow-auto">
           <ComingSoonTab tabName="Change Orders" />
         </div>
       </div>
-    </div>
+    </ProjectShell>
   );
 }

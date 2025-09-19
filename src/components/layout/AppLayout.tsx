@@ -22,12 +22,12 @@ export function AppLayout() {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-background">
+    <div className="min-h-screen bg-background">
       {/* Top Toolbar */}
       <Toolbar activeTab={getActiveTab()} onTabChange={handleTabChange} />
       
       {/* Main Layout */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1">
         <Outlet />
       </div>
     </div>

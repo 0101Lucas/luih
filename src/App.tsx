@@ -15,6 +15,7 @@ import { SelectionsPage } from "./pages/projects/SelectionsPage";
 import { WarrantiesPage } from "./pages/projects/WarrantiesPage";
 import { TimeClockPage } from "./pages/projects/TimeClockPage";
 import { ClientUpdatesPage } from "./pages/projects/ClientUpdatesPage";
+import { ProjectRedirect } from "./components/navigation/ProjectRedirect";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/" element={<AppLayout />}>
             <Route index element={<HomePage />} />
             <Route path="projects" element={<ProjectsPage />} />
+            <Route path="projects/:projectId" element={<ProjectRedirect />} />
             <Route path="projects/:projectId/schedule" element={<SchedulePage />} />
             <Route path="projects/:projectId/daily-logs" element={<DailyLogsPage />} />
             <Route path="projects/:projectId/todos" element={<TodosPage />} />

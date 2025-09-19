@@ -75,7 +75,7 @@ export function Toolbar({ activeTab, onTabChange }: ToolbarProps) {
   };
 
   return (
-    <div className="h-toolbar bg-toolbar border-b border-border flex items-center justify-between px-6">
+    <div className="sticky top-0 z-50 h-toolbar bg-toolbar border-b border-border flex items-center justify-between px-6 shadow-sm">
       {/* Left side - Logo and Navigation */}
       <div className="flex items-center space-x-8">
         {/* Logo */}

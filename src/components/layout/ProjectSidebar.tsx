@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Search, Plus, Filter, MoreVertical, MapPin, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,6 +42,8 @@ export function ProjectSidebar() {
   
   const { selectedProject, setSelectedProject } = useAppStore();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // Load projects on mount
   useEffect(() => {
@@ -90,12 +93,18 @@ export function ProjectSidebar() {
         template_id: newProject.template || undefined,
       };
       
-      await createProject(projectData);
+      const createdProject = await createProject(projectData);
       
       toast({
         title: "Success",
         description: "Project created successfully",
       });
+      
+      // Auto-select the new project
+      setSelectedProject(createdProject);
+      
+      // Navigate to daily-logs for the new project
+      navigate(`/projects/${createdProject.id}/daily-logs`);
       
       setShowNewProjectModal(false);
       setNewProject({ name: "", code: "", city: "", state: "", template: "" });
@@ -109,8 +118,28 @@ export function ProjectSidebar() {
     }
   };
 
+  const handleProjectSelect = (project: Project) => {
+    setSelectedProject(project);
+    
+    // Determine current section from URL to maintain it when switching projects
+    const currentPath = location.pathname;
+    let section = "daily-logs"; // default
+    
+    if (currentPath.includes("/schedule")) section = "schedule";
+    else if (currentPath.includes("/daily-logs")) section = "daily-logs";
+    else if (currentPath.includes("/todos")) section = "todos";
+    else if (currentPath.includes("/change-orders")) section = "change-orders";
+    else if (currentPath.includes("/selections")) section = "selections";
+    else if (currentPath.includes("/warranties")) section = "warranties";
+    else if (currentPath.includes("/time-clock")) section = "time-clock";
+    else if (currentPath.includes("/client-updates")) section = "client-updates";
+    
+    // Navigate to the same section but with the new project ID
+    navigate(`/projects/${project.id}/${section}`);
+  };
+
   return (
-    <div className="w-sidebar bg-sidebar border-r border-sidebar-border flex flex-col h-full">
+    <div className="w-[280px] bg-sidebar border-r border-sidebar-border flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b border-sidebar-border">
         <div className="flex items-center justify-between mb-4">
@@ -229,7 +258,7 @@ export function ProjectSidebar() {
                 ? "ring-2 ring-primary bg-primary-subtle"
                 : "hover:bg-sidebar-hover"
             }`}
-            onClick={() => setSelectedProject(project)}
+            onClick={() => handleProjectSelect(project)}
           >
             <div className="space-y-3">
               {/* Project Header */}

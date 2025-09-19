@@ -1,11 +1,10 @@
 import { Building2 } from "lucide-react";
-import { ProjectSidebar } from "@/components/layout/ProjectSidebar";
+import { ProjectShell } from "@/components/layout/ProjectShell";
 
 export function ProjectsPage() {
   return (
-    <div className="flex-1 flex overflow-hidden">
-      <ProjectSidebar />
-      <div className="flex-1 flex items-center justify-center bg-background">
+    <ProjectShell>
+      <div className="flex items-center justify-center h-full">
         <div className="text-center space-y-4">
           <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto">
             <Building2 className="h-12 w-12 text-muted-foreground" />
@@ -20,6 +19,6 @@ export function ProjectsPage() {
           </div>
         </div>
       </div>
-    </div>
+    </ProjectShell>
   );
 }
