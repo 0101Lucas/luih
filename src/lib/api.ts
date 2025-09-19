@@ -158,6 +158,20 @@ export const updateProject = async (projectId: string, payload: Partial<CreatePr
   return ProjectSchema.parse(data);
 };
 
+export const updateTodo = async (projectId: string, todoId: string, payload: Partial<CreateTodo>): Promise<Todo> => {
+  const { data, error } = await supabase
+    .from('to_dos')
+    .update(payload)
+    .eq('id', todoId)
+    .eq('project_id', projectId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  
+  return TodoSchema.parse(data);
+};
+
 export const deleteProject = async (projectId: string): Promise<void> => {
   const { error } = await supabase
     .from('projects')
