@@ -70,8 +70,7 @@ export async function fetchDailyLogsFeed({
         created_at,
         created_by,
         to_dos!inner(id, title, project_id),
-        reasons(id, label),
-        media!media_todo_id_fkey(id, type, url)
+        reasons(id, label)
       `)
       .eq('to_dos.project_id', projectId)
       .gte('created_at', startDateISO)
@@ -79,6 +78,17 @@ export async function fetchDailyLogsFeed({
       .order('created_at', { ascending: false });
 
     if (reportsError) throw reportsError;
+
+    // Get media for execution reports separately
+    const reportIds = reportsData?.map(r => r.id) || [];
+    let reportsMedia: any[] = [];
+    if (reportIds.length > 0) {
+      const { data: mediaData } = await supabase
+        .from('media')
+        .select('id, type, url, todo_id')
+        .in('todo_id', reportsData?.map(r => r.todo_id) || []);
+      reportsMedia = mediaData || [];
+    }
 
     // Group data by date
     const dayGroups = new Map<string, {
@@ -106,13 +116,17 @@ export async function fetchDailyLogsFeed({
       if (!dayGroups.has(date)) {
         dayGroups.set(date, { logs: [], todos: [] });
       }
+      
+      // Find media for this report's todo
+      const reportMedia = reportsMedia.filter(m => m.todo_id === report.todo_id);
+      
       dayGroups.get(date)!.todos.push({
         ...report,
         entry_date: date,
         kind: 'execution_report',
         todo_title: report.to_dos?.title,
         reason_label: report.reasons?.label,
-        media_urls: JSON.stringify(report.media || [])
+        media_urls: JSON.stringify(reportMedia || [])
       });
     });
 
