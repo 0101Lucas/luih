@@ -1,14 +1,26 @@
 // src/pages/projects/DailyLogsPage.tsx
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { fetchDailyPage, DayLog, DayTodo } from "@/lib/db/dailyLogs";
 import DailyLogsTab from "@/components/tabs/DailyLogsTab";
+import { ProjectShell } from "@/components/layout/ProjectShell";
+import { ProjectHeader } from "@/components/layout/ProjectHeader";
+import { useAppStore } from "@/store/app";
 
 export default function DailyLogsPage() {
   const { projectId } = useParams();
+  const navigate = useNavigate();
+  const { selectedProject } = useAppStore();
+  
   // pegue o dia selecionado do filtro atual ou hoje
   const [dayISO, setDayISO] = useState<string>(() => new Date().toISOString().slice(0,10));
   const [state, setState] = useState<{ missingReports: number; logs: DayLog[]; uncompleted: DayTodo[]; completed: DayTodo[] }>();
+
+  useEffect(() => {
+    if (!selectedProject && projectId) {
+      navigate('/projects');
+    }
+  }, [selectedProject, projectId, navigate]);
 
   useEffect(() => {
     if (!projectId) return;
@@ -25,14 +37,21 @@ export default function DailyLogsPage() {
   if (!projectId || !state) return null;
 
   return (
-    <DailyLogsTab
-      headerDate={headerDate}
-      missingReports={state.missingReports}
-      logs={state.logs}
-      uncompleted={state.uncompleted}
-      completed={state.completed}
-      dayISO={dayISO}
-      onChangeDay={setDayISO}
-    />
+    <ProjectShell>
+      <div className="flex flex-col h-full">
+        <ProjectHeader />
+        <div className="flex-1 overflow-auto">
+          <DailyLogsTab
+            headerDate={headerDate}
+            missingReports={state.missingReports}
+            logs={state.logs}
+            uncompleted={state.uncompleted}
+            completed={state.completed}
+            dayISO={dayISO}
+            onChangeDay={setDayISO}
+          />
+        </div>
+      </div>
+    </ProjectShell>
   );
 }
