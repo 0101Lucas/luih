@@ -59,7 +59,17 @@ export async function fetchDailyLogsFeed({
 
     if (logsError) throw logsError;
 
-    // Get execution reports with todo and reason details
+    // Get all to_dos for the project first
+    const { data: todosData, error: todosError } = await supabase
+      .from('to_dos')
+      .select('id, title, project_id')
+      .eq('project_id', projectId);
+
+    if (todosError) throw todosError;
+
+    const todoIds = todosData?.map(t => t.id) || [];
+    
+    // Get execution reports for those todos within date range
     const { data: reportsData, error: reportsError } = await supabase
       .from('execution_reports')
       .select(`
@@ -69,10 +79,9 @@ export async function fetchDailyLogsFeed({
         detail,
         created_at,
         created_by,
-        to_dos!inner(id, title, project_id),
         reasons(id, label)
       `)
-      .eq('to_dos.project_id', projectId)
+      .in('todo_id', todoIds)
       .gte('created_at', startDateISO + 'T00:00:00')
       .lte('created_at', endDateISO + 'T23:59:59')
       .order('created_at', { ascending: false });
@@ -82,17 +91,23 @@ export async function fetchDailyLogsFeed({
       throw reportsError;
     }
 
-    console.log('Reports data:', reportsData);
+    // Merge todo data with reports
+    const reportsWithTodos = reportsData?.map(report => ({
+      ...report,
+      to_dos: todosData?.find(todo => todo.id === report.todo_id)
+    })) || [];
+
+    console.log('Reports data:', reportsWithTodos);
     console.log('Date range:', startDateISO, 'to', endDateISO);
 
     // Get media for execution reports separately
-    const reportIds = reportsData?.map(r => r.id) || [];
+    const reportIds = reportsWithTodos?.map(r => r.id) || [];
     let reportsMedia: any[] = [];
     if (reportIds.length > 0) {
       const { data: mediaData } = await supabase
         .from('media')
         .select('id, type, url, todo_id')
-        .in('todo_id', reportsData?.map(r => r.todo_id) || []);
+        .in('todo_id', reportsWithTodos?.map(r => r.todo_id) || []);
       reportsMedia = mediaData || [];
     }
 
@@ -117,7 +132,7 @@ export async function fetchDailyLogsFeed({
     });
 
     // Process execution reports
-    reportsData?.forEach(report => {
+    reportsWithTodos?.forEach(report => {
       const date = report.created_at.slice(0, 10);
       if (!dayGroups.has(date)) {
         dayGroups.set(date, { logs: [], todos: [] });
