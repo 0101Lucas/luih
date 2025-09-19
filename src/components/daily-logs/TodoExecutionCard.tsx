@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FeedItem } from "@/lib/db/dailyLogs";
+import { MediaDisplay } from "@/components/daily-logs/MediaDisplay";
 import { format, parseISO } from "date-fns";
 
 interface TodoExecutionCardProps {
@@ -105,9 +106,14 @@ export function TodoExecutionCard({ item, onFillReport }: TodoExecutionCardProps
           </div>
         </div>
       </CardHeader>
-      {item.detail && (
-        <CardContent>
-          <p className="text-sm text-muted-foreground">{item.detail}</p>
+      {(item.detail || (item.media && item.media.length > 0)) && (
+        <CardContent className="space-y-4">
+          {item.detail && (
+            <p className="text-sm text-muted-foreground">{item.detail}</p>
+          )}
+          {item.media && item.media.length > 0 && (
+            <MediaDisplay items={item.media} />
+          )}
         </CardContent>
       )}
     </Card>

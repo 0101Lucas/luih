@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
-import { Camera, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -19,7 +17,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createNoteLog, listProjectTodos, ProjectTodo } from "@/lib/db/dailyLogs";
+import { FileUpload, FileUploadItem } from "@/components/ui/file-upload";
+import { createDailyLog, listProjectTodos, ProjectTodo } from "@/lib/db/dailyLogs";
 import { useToast } from "@/hooks/use-toast";
 
 interface CreateNoteModalProps {
@@ -33,7 +32,7 @@ export function CreateNoteModal({ open, onOpenChange, projectId, onSuccess }: Cr
   const { toast } = useToast();
   const [comment, setComment] = useState("");
   const [linkedTodoId, setLinkedTodoId] = useState<string | undefined>();
-  const [files, setFiles] = useState<File[]>([]);
+  const [fileItems, setFileItems] = useState<FileUploadItem[]>([]);
   const [todos, setTodos] = useState<ProjectTodo[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -57,31 +56,33 @@ export function CreateNoteModal({ open, onOpenChange, projectId, onSuccess }: Cr
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = Array.from(e.target.files || []);
-    
-    if (selectedFiles.length > 2) {
-      toast({
-        title: "Too many files",
-        description: "Maximum 2 files allowed",
-        variant: "destructive",
-      });
-      return;
+  const handleRetryUpload = async (index: number) => {
+    const fileItem = fileItems[index];
+    if (!fileItem) return;
+
+    // Mark as uploading
+    const updatedItems = [...fileItems];
+    updatedItems[index] = { ...fileItem, status: 'uploading', progress: 0 };
+    setFileItems(updatedItems);
+
+    try {
+      // Simulate upload progress (in real implementation, this would be handled by the upload function)
+      for (let progress = 0; progress <= 100; progress += 10) {
+        updatedItems[index] = { ...fileItem, status: 'uploading', progress };
+        setFileItems([...updatedItems]);
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      updatedItems[index] = { ...fileItem, status: 'success' };
+      setFileItems([...updatedItems]);
+    } catch (error) {
+      updatedItems[index] = { 
+        ...fileItem, 
+        status: 'error', 
+        error: error instanceof Error ? error.message : 'Upload failed'
+      };
+      setFileItems([...updatedItems]);
     }
-
-    const imageFiles = selectedFiles.filter(f => f.type.startsWith('image/'));
-    const videoFiles = selectedFiles.filter(f => f.type.startsWith('video/'));
-
-    if (videoFiles.length > 1 || (videoFiles.length === 1 && imageFiles.length > 0)) {
-      toast({
-        title: "Invalid file combination",
-        description: "Only 1 video file OR up to 2 images allowed",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setFiles(selectedFiles);
   };
 
   const handleSubmit = async () => {
@@ -95,28 +96,65 @@ export function CreateNoteModal({ open, onOpenChange, projectId, onSuccess }: Cr
     }
 
     setLoading(true);
+    
+    // Mark all files as uploading
+    const updatedItems = fileItems.map(item => ({ ...item, status: 'uploading' as const, progress: 0 }));
+    setFileItems(updatedItems);
+
     try {
-      await createNoteLog({
+      const files = fileItems.map(item => item.file);
+      const result = await createDailyLog({
         projectId,
         todoId: linkedTodoId,
         comment,
         files,
       });
 
-      toast({
-        title: "Success",
-        description: "Log entry created successfully",
+      // Update file statuses based on upload results
+      const finalItems = fileItems.map((item, index) => {
+        const uploadResult = result.uploadResults[index];
+        return {
+          ...item,
+          status: uploadResult?.success ? 'success' as const : 'error' as const,
+          error: uploadResult?.error
+        };
       });
+      setFileItems(finalItems);
 
-      // Reset form
-      setComment("");
-      setLinkedTodoId(undefined);
-      setFiles([]);
-      
-      onSuccess();
-      onOpenChange(false);
+      const failedCount = result.uploadResults.filter(r => !r.success).length;
+      const successCount = result.uploadResults.filter(r => r.success).length;
+
+      if (failedCount === 0) {
+        toast({
+          title: "Success",
+          description: "Log entry created successfully with all files uploaded",
+        });
+        
+        // Reset form and close
+        setComment("");
+        setLinkedTodoId(undefined);
+        setFileItems([]);
+        onSuccess();
+        onOpenChange(false);
+      } else {
+        toast({
+          title: "Partially successful",
+          description: `Log entry created. ${successCount} files uploaded, ${failedCount} failed. You can retry failed uploads.`,
+          variant: "default",
+        });
+        onSuccess(); // Still refresh the list
+      }
     } catch (error) {
       console.error('Error creating note:', error);
+      
+      // Mark all files as error
+      const errorItems = fileItems.map(item => ({ 
+        ...item, 
+        status: 'error' as const, 
+        error: 'Upload failed' 
+      }));
+      setFileItems(errorItems);
+      
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to create log entry",
@@ -164,36 +202,13 @@ export function CreateNoteModal({ open, onOpenChange, projectId, onSuccess }: Cr
           </div>
           <div className="grid gap-2">
             <Label>Evidence (Optional)</Label>
-            <div className="flex items-center space-x-2">
-              <Input
-                type="file"
-                accept="image/*,video/*"
-                multiple
-                onChange={handleFileChange}
-                className="flex-1"
-              />
-              <Button variant="outline" size="sm" asChild>
-                <label className="cursor-pointer">
-                  <Camera className="h-4 w-4 mr-2" />
-                  Browse
-                  <input
-                    type="file"
-                    accept="image/*,video/*"
-                    multiple
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
-                </label>
-              </Button>
-            </div>
-            {files.length > 0 && (
-              <div className="text-sm text-muted-foreground">
-                {files.length} file{files.length > 1 ? 's' : ''} selected: {files.map(f => f.name).join(', ')}
-              </div>
-            )}
-            <p className="text-xs text-muted-foreground">
-              Maximum 2 images OR 1 video file
-            </p>
+            <FileUpload
+              files={fileItems}
+              onFilesChange={setFileItems}
+              onRetry={handleRetryUpload}
+              accept="image/*,video/*"
+              disabled={loading}
+            />
           </div>
         </div>
         <DialogFooter>
@@ -201,7 +216,7 @@ export function CreateNoteModal({ open, onOpenChange, projectId, onSuccess }: Cr
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? (files.length > 0 ? "Uploading files..." : "Creating...") : "Create Entry"}
+            {loading ? (fileItems.length > 0 ? "Uploading files..." : "Creating...") : "Create Entry"}
           </Button>
         </DialogFooter>
       </DialogContent>

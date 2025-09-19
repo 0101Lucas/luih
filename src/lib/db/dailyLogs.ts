@@ -1,6 +1,16 @@
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 
+export interface MediaItem {
+  id: string;
+  project_id: string;
+  log_id?: string;
+  todo_id?: string;
+  url: string; // Storage path, not full URL
+  type: 'photo' | 'video';
+  created_at: string;
+}
+
 export interface FeedItem {
   entry_id: string;
   entry_date: string;
@@ -16,6 +26,14 @@ export interface FeedItem {
   review_comment?: string;
   media_count: number;
   todo_title?: string;
+  media?: MediaItem[];
+}
+
+export interface UploadResult {
+  success: boolean;
+  path?: string;
+  error?: string;
+  fileName: string;
 }
 
 export interface FeedOptions {
@@ -30,6 +48,18 @@ export interface CreateNoteParams {
   todoId?: string;
   comment: string;
   files: File[];
+}
+
+export interface DailyLogWithMedia {
+  id: string;
+  project_id: string;
+  todo_id?: string;
+  title?: string;
+  body?: string;
+  entry_type: string;
+  created_by?: string;
+  created_at: string;
+  media: MediaItem[];
 }
 
 export interface ExecutionReportParams {
@@ -49,6 +79,61 @@ export interface ProjectTodo {
   id: string;
   title: string;
   due_date: string | null;
+}
+
+// Storage helpers
+export function getMediaStoragePath(projectId: string, logId: string, fileName: string): string {
+  const timestamp = Date.now();
+  const cleanFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
+  return `projects/${projectId}/logs/${logId}/${timestamp}-${cleanFileName}`;
+}
+
+export function getPublicMediaUrl(path: string): string {
+  const { data } = supabase.storage.from('media').getPublicUrl(path);
+  return data.publicUrl;
+}
+
+// Upload files in parallel with error handling
+export async function uploadFiles(projectId: string, logId: string, files: File[]): Promise<UploadResult[]> {
+  const uploadPromises = files.map(async (file): Promise<UploadResult> => {
+    try {
+      const filePath = getMediaStoragePath(projectId, logId, file.name);
+      
+      const { error: uploadError } = await supabase.storage
+        .from('media')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        return {
+          success: false,
+          error: uploadError.message,
+          fileName: file.name
+        };
+      }
+
+      return {
+        success: true,
+        path: filePath,
+        fileName: file.name
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        fileName: file.name
+      };
+    }
+  });
+
+  return Promise.allSettled(uploadPromises).then(results =>
+    results.map(result => 
+      result.status === 'fulfilled' ? result.value : {
+        success: false,
+        error: 'Upload failed',
+        fileName: 'unknown'
+      }
+    )
+  );
 }
 
 // Returns unified feed for [from..to] (inclusive), newest first
@@ -89,23 +174,55 @@ export async function listDailyLogFeed(
   return filteredData;
 }
 
-// Manual note creation with storage upload
-export async function createNoteLog(params: CreateNoteParams): Promise<void> {
+// Get daily logs with media for detailed view
+export async function listDailyLogs(projectId: string, filters?: {
+  from?: string;
+  to?: string;
+  search?: string;
+}): Promise<DailyLogWithMedia[]> {
+  let query = supabase
+    .from('daily_logs')
+    .select(`
+      *,
+      media (
+        id,
+        url,
+        type,
+        created_at
+      )
+    `)
+    .eq('project_id', projectId)
+    .order('created_at', { ascending: false });
+
+  if (filters?.from) {
+    query = query.gte('created_at', filters.from);
+  }
+  if (filters?.to) {
+    query = query.lte('created_at', filters.to);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+
+  let results = data || [];
+
+  // Apply search filter
+  if (filters?.search) {
+    const searchTerm = filters.search.toLowerCase();
+    results = results.filter(log => 
+      log.title?.toLowerCase().includes(searchTerm) ||
+      log.body?.toLowerCase().includes(searchTerm)
+    );
+  }
+
+  return results as DailyLogWithMedia[];
+}
+
+// Enhanced note creation with multiple files and better error handling
+export async function createDailyLog(params: CreateNoteParams): Promise<{ logId: string; uploadResults: UploadResult[] }> {
   const { projectId, todoId, comment, files } = params;
 
-  // Validate files
-  if (files.length > 2) {
-    throw new Error('Maximum 2 files allowed');
-  }
-
-  const imageFiles = files.filter(f => f.type.startsWith('image/'));
-  const videoFiles = files.filter(f => f.type.startsWith('video/'));
-
-  if (videoFiles.length > 1 || (videoFiles.length === 1 && imageFiles.length > 0)) {
-    throw new Error('Only 1 video file OR up to 2 images allowed');
-  }
-
-  // Insert daily log entry
+  // Insert daily log entry first
   const { data: logData, error: logError } = await supabase
     .from('daily_logs')
     .insert({
@@ -120,35 +237,45 @@ export async function createNoteLog(params: CreateNoteParams): Promise<void> {
 
   if (logError) throw logError;
 
-  // Upload files and insert media records
-  for (const file of files) {
-    const timestamp = Date.now();
-    const fileName = `${timestamp}-${file.name}`;
-    const filePath = `${projectId}/${logData.id}/${fileName}`;
+  // Upload files in parallel
+  const uploadResults = await uploadFiles(projectId, logData.id, files);
 
-    // Upload to storage
-    const { error: uploadError } = await supabase.storage
-      .from('media')
-      .upload(filePath, file);
+  // Insert media records for successful uploads only
+  const mediaInserts = uploadResults
+    .filter(result => result.success && result.path)
+    .map(result => ({
+      project_id: projectId,
+      log_id: logData.id,
+      url: result.path!, // Store path, not full URL
+      type: files.find(f => f.name === result.fileName)?.type.startsWith('video/') ? 'video' as const : 'photo' as const
+    }));
 
-    if (uploadError) throw uploadError;
-
-    // Get public URL
-    const { data: urlData } = supabase.storage
-      .from('media')
-      .getPublicUrl(filePath);
-
-    // Insert media record
+  if (mediaInserts.length > 0) {
     const { error: mediaError } = await supabase
       .from('media')
-      .insert({
-        project_id: projectId,
-        log_id: logData.id,
-        url: urlData.publicUrl,
-        type: file.type.startsWith('video/') ? 'video' : 'photo'
-      });
+      .insert(mediaInserts);
 
-    if (mediaError) throw mediaError;
+    if (mediaError) {
+      console.error('Error inserting media records:', mediaError);
+      // Don't throw here - log exists, just media insertion failed
+    }
+  }
+
+  return {
+    logId: logData.id,
+    uploadResults
+  };
+}
+
+// Legacy wrapper for backward compatibility
+export async function createNoteLog(params: CreateNoteParams): Promise<void> {
+  const result = await createDailyLog(params);
+  
+  // Check if any uploads failed
+  const failedUploads = result.uploadResults.filter(r => !r.success);
+  if (failedUploads.length > 0) {
+    console.warn('Some file uploads failed:', failedUploads);
+    // Don't throw - log was created successfully
   }
 }
 
@@ -200,35 +327,41 @@ export async function upsertExecutionReport(params: ExecutionReportParams): Prom
 
   // Upload evidence files if provided
   if (files && files.length > 0) {
-    for (const file of files) {
+    // Use consistent path format for todos
+    const uploadPromises = files.map(async (file) => {
       const timestamp = Date.now();
-      const fileName = `${timestamp}_${file.name}`;
-      const filePath = `todos/${todoId}/${fileName}`;
+      const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const filePath = `projects/${todoData.project_id}/todos/${todoId}/${timestamp}-${cleanFileName}`;
 
-      // Upload to storage
-      const { error: uploadError } = await supabase.storage
-        .from('media')
-        .upload(filePath, file);
+      try {
+        // Upload to storage
+        const { error: uploadError } = await supabase.storage
+          .from('media')
+          .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
+        if (uploadError) throw uploadError;
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('media')
-        .getPublicUrl(filePath);
+        // Insert media record with path (not full URL)
+        const { error: mediaError } = await supabase
+          .from('media')
+          .insert({
+            project_id: todoData.project_id,
+            todo_id: todoId,
+            url: filePath, // Store path, not full URL
+            type: file.type.startsWith('video/') ? 'video' : 'photo'
+          });
 
-      // Insert media record
-      const { error: mediaError } = await supabase
-        .from('media')
-        .insert({
-          project_id: todoData.project_id,
-          todo_id: todoId,
-          url: urlData.publicUrl,
-          type: file.type.startsWith('video/') ? 'video' : 'photo'
-        });
+        if (mediaError) throw mediaError;
+        
+        return { success: true, fileName: file.name };
+      } catch (error) {
+        console.error(`Failed to upload ${file.name}:`, error);
+        return { success: false, fileName: file.name, error };
+      }
+    });
 
-      if (mediaError) throw mediaError;
-    }
+    // Wait for all uploads to complete
+    await Promise.allSettled(uploadPromises);
   }
 }
 

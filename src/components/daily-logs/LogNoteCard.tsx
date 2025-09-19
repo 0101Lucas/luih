@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FeedItem } from "@/lib/db/dailyLogs";
+import { MediaDisplay } from "@/components/daily-logs/MediaDisplay";
 import { format, parseISO } from "date-fns";
 
 interface LogNoteCardProps {
@@ -61,9 +62,12 @@ export function LogNoteCard({ item }: LogNoteCardProps) {
           </div>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
         {item.body && (
           <p className="text-foreground leading-relaxed">{item.body}</p>
+        )}
+        {item.media && item.media.length > 0 && (
+          <MediaDisplay items={item.media} />
         )}
       </CardContent>
     </Card>
