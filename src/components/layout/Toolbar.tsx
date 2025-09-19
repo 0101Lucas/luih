@@ -79,14 +79,18 @@ export function Toolbar({ activeTab, onTabChange }: ToolbarProps) {
       {/* Left side - Logo and Navigation */}
       <div className="flex items-center space-x-8">
         {/* Logo */}
-        <div className="flex items-center space-x-2">
+        <button 
+          onClick={() => navigate('/')}
+          className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
+        >
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+            {/* Logo image will go here */}
             <span className="text-primary-foreground font-bold text-lg">V</span>
           </div>
           <span className="font-heading font-semibold text-lg text-foreground">
             Vibe Code
           </span>
-        </div>
+        </button>
 
         {/* Navigation Tabs */}
         <nav className="flex items-center space-x-1">
