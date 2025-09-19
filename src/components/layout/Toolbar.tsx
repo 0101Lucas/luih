@@ -81,15 +81,13 @@ export function Toolbar({ activeTab, onTabChange }: ToolbarProps) {
         {/* Logo */}
         <button 
           onClick={() => navigate('/')}
-          className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
+          className="flex items-center hover:opacity-80 transition-opacity"
         >
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            {/* Logo image will go here */}
-            <span className="text-primary-foreground font-bold text-lg">V</span>
-          </div>
-          <span className="font-heading font-semibold text-lg text-foreground">
-            Vibe Code
-          </span>
+          <img 
+            src="/src/assets/luih-logo.png" 
+            alt="LUIH Luxury Homes" 
+            className="h-8"
+          />
         </button>
 
         {/* Navigation Tabs */}
