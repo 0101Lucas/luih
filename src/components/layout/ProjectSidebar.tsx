@@ -126,6 +126,20 @@ export function ProjectSidebar() {
 
   return (
     <div className="w-[280px] bg-sidebar border-r border-sidebar-border flex flex-col h-full">
+      {/* Logo */}
+      <div className="p-6 border-b border-sidebar-border flex justify-center">
+        <button 
+          onClick={() => navigate('/')}
+          className="flex items-center hover:opacity-80 transition-opacity"
+        >
+          <img 
+            src="/luih-logo.png" 
+            alt="LUIH Luxury Homes" 
+            className="h-12 w-auto"
+          />
+        </button>
+      </div>
+
       {/* Header */}
       <div className="p-4 border-b border-sidebar-border">
         <div className="flex items-center justify-between mb-4">

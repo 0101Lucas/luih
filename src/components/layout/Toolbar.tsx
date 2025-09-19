@@ -75,20 +75,8 @@ export function Toolbar({ activeTab, onTabChange }: ToolbarProps) {
 
   return (
     <div className="sticky top-0 z-50 h-toolbar bg-toolbar border-b border-border flex items-center justify-between px-6 shadow-sm">
-      {/* Left side - Logo and Navigation */}
-      <div className="flex items-center space-x-8">
-        {/* Logo */}
-        <button 
-          onClick={() => navigate('/')}
-          className="flex items-center hover:opacity-80 transition-opacity"
-        >
-          <img 
-            src="/luih-logo.png" 
-            alt="LUIH Luxury Homes" 
-            className="h-8"
-          />
-        </button>
-
+      {/* Left side - Navigation */}
+      <div className="flex items-center">
         {/* Navigation Tabs */}
         <nav className="flex items-center space-x-1">
           {tabs.map((tab) => (
