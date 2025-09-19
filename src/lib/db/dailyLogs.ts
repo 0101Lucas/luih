@@ -73,11 +73,17 @@ export async function fetchDailyLogsFeed({
         reasons(id, label)
       `)
       .eq('to_dos.project_id', projectId)
-      .gte('created_at', startDateISO)
+      .gte('created_at', startDateISO + 'T00:00:00')
       .lte('created_at', endDateISO + 'T23:59:59')
       .order('created_at', { ascending: false });
 
-    if (reportsError) throw reportsError;
+    if (reportsError) {
+      console.error('Reports error:', reportsError);
+      throw reportsError;
+    }
+
+    console.log('Reports data:', reportsData);
+    console.log('Date range:', startDateISO, 'to', endDateISO);
 
     // Get media for execution reports separately
     const reportIds = reportsData?.map(r => r.id) || [];
