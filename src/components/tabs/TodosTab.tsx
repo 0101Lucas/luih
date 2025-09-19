@@ -1,12 +1,19 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Search, Calendar, User, CheckCircle, Circle } from "lucide-react";
+import { Plus, Search, Calendar, User, CheckCircle, Circle, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -229,55 +236,80 @@ export function TodosTab() {
         </div>
       </div>
 
-      {/* To-Do List */}
-      <div className="space-y-2">
-        {filteredTodos.map((todo) => (
-          <Card key={todo.id} className="hover:shadow-sm transition-shadow cursor-pointer" onClick={() => handleEditTodo(todo)}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="mt-1">
-                    {todo.status === 'complete' ? (
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                    ) : (
-                      <Circle className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </div>
-                  
-                  <div className="flex-1">
-                    <h3 className="font-medium text-foreground">{todo.title}</h3>
+      {/* To-Do Table */}
+      <div className="border rounded-lg">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-12">Status</TableHead>
+              <TableHead>Title</TableHead>
+              <TableHead>Priority</TableHead>
+              <TableHead>Assigned To</TableHead>
+              <TableHead>Due Date</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead className="w-12">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredTodos.map((todo) => (
+              <TableRow key={todo.id} className="cursor-pointer hover:bg-muted/50">
+                <TableCell>
+                  {todo.status === 'complete' ? (
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <Circle className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </TableCell>
+                <TableCell className="font-medium">
+                  <div>
+                    <div className="font-medium">{todo.title}</div>
                     {todo.notes && (
-                      <p className="text-sm text-muted-foreground mt-1">{todo.notes}</p>
+                      <div className="text-sm text-muted-foreground mt-1">{todo.notes}</div>
                     )}
                   </div>
-                </div>
-                
-                <div className="flex items-center space-x-2">
+                </TableCell>
+                <TableCell>
                   {todo.priority !== 'none' && (
                     <Badge className={`text-xs ${priorityColors[todo.priority as keyof typeof priorityColors]}`}>
                       {todo.priority}
                     </Badge>
                   )}
-                  <Badge className={`text-xs ${statusColors[todo.status as keyof typeof statusColors]}`}>
-                    {todo.status}
-                  </Badge>
-                  {todo.due_date && (
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <Calendar className="h-4 w-4 mr-1" />
-                      {new Date(todo.due_date).toLocaleDateString()}
-                    </div>
-                  )}
+                </TableCell>
+                <TableCell>
                   {todo.assigned_to && (
-                    <div className="flex items-center text-sm text-muted-foreground">
+                    <div className="flex items-center text-sm">
                       <User className="h-4 w-4 mr-1" />
                       {todo.assigned_to}
                     </div>
                   )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                </TableCell>
+                <TableCell>
+                  {todo.due_date && (
+                    <div className="flex items-center text-sm">
+                      <Calendar className="h-4 w-4 mr-1" />
+                      {new Date(todo.due_date).toLocaleDateString()}
+                    </div>
+                  )}
+                </TableCell>
+                <TableCell className="text-sm text-muted-foreground">
+                  {new Date(todo.created_at).toLocaleDateString()}
+                </TableCell>
+                <TableCell>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditTodo(todo);
+                    }}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
 
       {/* Edit Todo Dialog */}
