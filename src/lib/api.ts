@@ -141,3 +141,28 @@ export const createDailyLog = async (projectId: string, payload: CreateDailyLog)
   
   return DailyLogSchema.parse(data);
 };
+
+export const updateProject = async (projectId: string, payload: Partial<CreateProject>): Promise<Project> => {
+  const { data, error } = await supabase
+    .from('projects')
+    .update({
+      name: payload.name,
+      external_ref: payload.code,
+    })
+    .eq('id', projectId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  
+  return ProjectSchema.parse(data);
+};
+
+export const deleteProject = async (projectId: string): Promise<void> => {
+  const { error } = await supabase
+    .from('projects')
+    .delete()
+    .eq('id', projectId);
+
+  if (error) throw error;
+};
