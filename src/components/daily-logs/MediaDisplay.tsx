@@ -1,3 +1,5 @@
+import MediaLightbox from "./MediaLightbox";
+
 // adicione prop opcional
 export default function MediaDisplay({
   items,
@@ -8,7 +10,7 @@ export default function MediaDisplay({
 }) {
   if (mode === "lightbox") {
     // mantém comportamento antigo
-    return <MediaLightbox items={items} />;
+    return <MediaLightbox items={items} onClose={() => {}} />;
   }
 
   // preview-first clicável

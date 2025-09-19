@@ -1,3 +1,4 @@
+import React from "react";
 import MediaDisplay from "./MediaDisplay";
 
 export default function LogFeedEntry({ entry }: { entry: any }) {

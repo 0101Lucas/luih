@@ -4,14 +4,18 @@ import { Download, ExternalLink, X } from "lucide-react";
 import { getPublicMediaUrl } from "@/lib/db/dailyLogs";
 
 interface MediaLightboxProps {
-  media: { url: string; type: 'photo' | 'video' } | null;
+  media?: { url: string; type: 'photo' | 'video' | 'file' } | null;
+  items?: Array<{ id: string; type: "photo"|"video"|"file"; url: string }>;
   onClose: () => void;
 }
 
-export function MediaLightbox({ media, onClose }: MediaLightboxProps) {
-  if (!media) return null;
+export default function MediaLightbox({ media, items, onClose }: MediaLightboxProps) {
+  // Handle both legacy media prop and new items prop
+  const currentMedia = media || (items && items.length > 0 ? { url: items[0].url, type: items[0].type } : null);
+  
+  if (!currentMedia) return null;
 
-  const publicUrl = getPublicMediaUrl(media.url);
+  const publicUrl = getPublicMediaUrl(currentMedia.url);
 
   const handleDownload = async () => {
     try {
@@ -21,7 +25,7 @@ export function MediaLightbox({ media, onClose }: MediaLightboxProps) {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = media.url.split('/').pop() || 'download';
+      a.download = currentMedia.url.split('/').pop() || 'download';
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -36,7 +40,7 @@ export function MediaLightbox({ media, onClose }: MediaLightboxProps) {
   };
 
   return (
-    <Dialog open={!!media} onOpenChange={() => onClose()}>
+    <Dialog open={!!currentMedia} onOpenChange={() => onClose()}>
       <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden">
         {/* Header with controls */}
         <div className="absolute top-4 right-4 z-10 flex gap-2">
@@ -69,14 +73,14 @@ export function MediaLightbox({ media, onClose }: MediaLightboxProps) {
 
         {/* Media content */}
         <div className="flex items-center justify-center min-h-[400px] bg-background">
-          {media.type === 'photo' ? (
+          {currentMedia.type === 'photo' ? (
             <img
               src={publicUrl}
               alt="Media preview"
               className="max-w-full max-h-[80vh] object-contain"
               loading="lazy"
             />
-          ) : (
+          ) : currentMedia.type === 'video' ? (
             <video
               controls
               className="max-w-full max-h-[80vh] object-contain"
@@ -85,13 +89,23 @@ export function MediaLightbox({ media, onClose }: MediaLightboxProps) {
               <source src={publicUrl} />
               Your browser does not support the video tag.
             </video>
+          ) : (
+            <div className="text-center p-8">
+              <p className="text-lg font-medium">File Preview</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                {currentMedia.url.split('/').pop()}
+              </p>
+              <Button onClick={() => window.open(publicUrl, '_blank')} className="mt-4">
+                Open File
+              </Button>
+            </div>
           )}
         </div>
 
         {/* Footer with file info */}
         <div className="p-4 bg-muted/50 backdrop-blur-sm">
           <p className="text-sm text-muted-foreground">
-            {media.url.split('/').pop()?.split('-').slice(1).join('-') || 'Unknown file'}
+            {currentMedia.url.split('/').pop()?.split('-').slice(1).join('-') || 'Unknown file'}
           </p>
         </div>
       </DialogContent>

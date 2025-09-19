@@ -1,7 +1,7 @@
 // src/pages/projects/DailyLogsPage.tsx
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import { fetchDailyPage, DayLog, DayTodo } from "@/integrations/supabase/lib/db/dailyLogs";
+import { fetchDailyPage, DayLog, DayTodo } from "@/lib/db/dailyLogs";
 import DailyLogsTab from "@/components/tabs/DailyLogsTab";
 
 export default function DailyLogsPage() {
@@ -19,7 +19,7 @@ export default function DailyLogsPage() {
     // Thu, Sep 19 2025
     const d = new Date(dayISO + "T12:00:00-04:00");
     return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "2-digit", year: "numeric" })
-      .replaceAll(",", "");
+      .replace(/,/g, "");
   }, [dayISO]);
 
   if (!projectId || !state) return null;

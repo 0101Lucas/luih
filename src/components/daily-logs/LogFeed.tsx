@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { useAppStore } from "@/store/app";
 import { listDailyLogFeed, FeedItem } from "@/lib/db/dailyLogs";
 import { LogFeedFilters } from "@/components/daily-logs/LogFeedFilters";
-import { LogFeedEntry } from "@/components/daily-logs/LogFeedEntry";
+import LogFeedEntry from "@/components/daily-logs/LogFeedEntry";
 import { CreateNoteModal } from "@/components/daily-logs/CreateNoteModal";
 import { ExecutionReportSheet } from "@/components/daily-logs/ExecutionReportSheet";
-import { MediaLightbox } from "@/components/daily-logs/MediaLightbox";
+import MediaLightbox from "@/components/daily-logs/MediaLightbox";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, isValid } from "date-fns";
 interface GroupedFeedItem {

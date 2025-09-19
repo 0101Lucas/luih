@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FeedItem } from "@/lib/db/dailyLogs";
-import { MediaDisplay } from "@/components/daily-logs/MediaDisplay";
+import MediaDisplay from "@/components/daily-logs/MediaDisplay";
 import { format, parseISO } from "date-fns";
 
 interface LogNoteCardProps {

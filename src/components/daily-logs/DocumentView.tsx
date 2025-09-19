@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { useAppStore } from "@/store/app";
 import { listDailyLogFeed, FeedItem, getPublicMediaUrl } from "@/lib/db/dailyLogs";
-import { MediaLightbox } from "@/components/daily-logs/MediaLightbox";
+import MediaLightbox from "@/components/daily-logs/MediaLightbox";
 import { format, parseISO, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -90,8 +90,8 @@ export function DocumentView({ onCreateClick }: DocumentViewProps) {
     });
   };
 
-  const handleMediaClick = (url: string, type: 'photo' | 'video') => {
-    setLightboxMedia({ url: getPublicMediaUrl(url), type });
+  const handleMediaClick = (url: string, type: 'photo' | 'video' | 'file') => {
+    setLightboxMedia({ url: getPublicMediaUrl(url), type: type as 'photo' | 'video' });
   };
 
   if (!selectedProject) {

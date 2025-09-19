@@ -8,7 +8,7 @@ import { HomePage } from "./pages/HomePage";
 import NotFound from "./pages/NotFound";
 import { ProjectsPage } from "./pages/projects/ProjectsPage";
 import { SchedulePage } from "./pages/projects/SchedulePage";
-import { DailyLogsPage } from "./pages/projects/DailyLogsPage";
+import DailyLogsPage from "./pages/projects/DailyLogsPage";
 import { TodosPage } from "./pages/projects/TodosPage";
 import { ChangeOrdersPage } from "./pages/projects/ChangeOrdersPage";
 import { SelectionsPage } from "./pages/projects/SelectionsPage";

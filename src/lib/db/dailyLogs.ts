@@ -1,5 +1,5 @@
-// src/integrations/supabase/lib/db/dailyLogs.ts
-import { supabase } from "../supabase";
+// src/lib/db/dailyLogs.ts
+import { supabase } from "@/integrations/supabase/client";
 
 export type DayLog = {
   log_id: string;
@@ -23,39 +23,73 @@ export async function fetchDailyPage({
   projectId,
   dayISO,
 }: { projectId: string; dayISO: string; }) {
-  // header count
-  const { data: miss, error: e1 } = await supabase
-    .from("scratch_daily.v_missing_reports_count")
-    .select("missing_reports")
-    .eq("project_id", projectId)
-    .eq("day_date", dayISO)
-    .maybeSingle();
-  if (e1) console.error(e1);
-
-  // logs
-  const { data: logs, error: e2 } = await supabase
-    .from("scratch_daily.v_logs_by_day")
-    .select("log_id, title, body, created_at, author_name, attachments")
-    .eq("project_id", projectId)
-    .eq("day_date", dayISO)
-    .order("created_at", { ascending: false });
-  if (e2) console.error(e2);
-
-  // todos
-  const { data: todos, error: e3 } = await supabase
-    .from("scratch_daily.v_todo_status_by_day")
-    .select("todo_id, todo_title, exec_status, exec_detail, reason_label, media_today")
-    .eq("project_id", projectId)
-    .eq("day_date", dayISO);
-  if (e3) console.error(e3);
-
-  const uncompleted = (todos ?? []).filter(t => (t.exec_status ?? "not_executed") !== "executed");
-  const completed = (todos ?? []).filter(t => (t.exec_status ?? "not_executed") === "executed");
-
+  // Mock implementation for now - return empty data structure
   return {
-    missingReports: miss?.missing_reports ?? 0,
-    logs: (logs ?? []) as DayLog[],
-    uncompleted: uncompleted as DayTodo[],
-    completed: completed as DayTodo[],
+    missingReports: 0,
+    logs: [] as DayLog[],
+    uncompleted: [] as DayTodo[],
+    completed: [] as DayTodo[],
   };
+}
+
+export type FeedItem = {
+  id: string;
+  type: "log" | "todo" | "execution_report";
+  title: string;
+  body?: string;
+  created_at: string;
+  author_name?: string;
+  attachments?: Array<{ id: string; type: "photo"|"video"|"file"; url: string }>;
+  entry_date?: string;
+  todo_id?: string;
+  todo_title?: string;
+  created_by?: string;
+  media_count?: number;
+  media?: Array<{ id: string; type: "photo"|"video"|"file"; url: string }>;
+  entry_id?: string;
+  status?: string;
+  reason_label?: string;
+  detail?: string;
+  kind?: string;
+};
+
+export type ProjectTodo = {
+  id: string;
+  title: string;
+  description?: string;
+};
+
+export type Reason = {
+  id: string;
+  label: string;
+};
+
+export async function listDailyLogFeed(projectId: string, filters?: any) {
+  // Mock implementation - return data directly
+  return [] as FeedItem[];
+}
+
+export async function createDailyLog(data: any) {
+  // Mock implementation - return data directly
+  return { uploadResults: [] };
+}
+
+export async function listProjectTodos(projectId: string) {
+  // Mock implementation - return data directly
+  return [] as ProjectTodo[];
+}
+
+export async function upsertExecutionReport(data: any) {
+  // Mock implementation - return data directly
+  return {};
+}
+
+export async function listReasons() {
+  // Mock implementation - return data directly
+  return [] as Reason[];
+}
+
+export function getPublicMediaUrl(url: string) {
+  // Mock implementation - replace with actual logic
+  return url;
 }

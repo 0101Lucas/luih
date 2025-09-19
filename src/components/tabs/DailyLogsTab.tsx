@@ -1,4 +1,5 @@
 // src/components/tabs/DailyLogsTab.tsx
+import React from "react";
 import LogFeedEntry from "../daily-logs/LogFeedEntry";
 import TodoExecutionCard from "../daily-logs/TodoExecutionCard";
 
