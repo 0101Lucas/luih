@@ -22,16 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-interface Project {
-  id: string;
-  name: string;
-  code: string;
-  location: string;
-  status: string;
-  dueDate: string;
-  progress: number;
-}
+import { useAppStore } from "@/store/app";
 
 interface DailyLog {
   id: string;
@@ -41,10 +32,6 @@ interface DailyLog {
   content: string;
   type: "progress" | "delay" | "inspection" | "safety" | "weather";
   attachments: number;
-}
-
-interface DailyLogsTabProps {
-  project: Project;
 }
 
 const mockLogs: DailyLog[] = [
@@ -77,7 +64,8 @@ const mockLogs: DailyLog[] = [
   },
 ];
 
-export function DailyLogsTab({ project }: DailyLogsTabProps) {
+export function DailyLogsTab() {
+  const { selectedProject } = useAppStore();
   const [searchValue, setSearchValue] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newLog, setNewLog] = useState({
@@ -134,7 +122,7 @@ export function DailyLogsTab({ project }: DailyLogsTabProps) {
             <DialogHeader>
               <DialogTitle>Create Daily Log Entry</DialogTitle>
               <DialogDescription>
-                Document today's progress and activities for {project.name}.
+                Document today's progress and activities for {selectedProject?.name || 'this project'}.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">

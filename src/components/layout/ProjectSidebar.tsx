@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, Plus, Filter, MoreVertical, MapPin, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,55 +21,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { listProjects, createProject } from "@/lib/api";
+import { Project, CreateProject } from "@/lib/types";
+import { useAppStore } from "@/store/app";
+import { useToast } from "@/hooks/use-toast";
 
-interface Project {
-  id: string;
-  name: string;
-  code: string;
-  location: string;
-  status: "active" | "pending" | "completed";
-  dueDate: string;
-  progress: number;
-}
-
-interface ProjectSidebarProps {
-  selectedProject: Project | null;
-  onSelectProject: (project: Project) => void;
-}
-
-const mockProjects: Project[] = [
-  {
-    id: "1",
-    name: "Modern Family Home",
-    code: "MFH-2024-001",
-    location: "Austin, TX",
-    status: "active",
-    dueDate: "2024-03-15",
-    progress: 65,
-  },
-  {
-    id: "2",
-    name: "Downtown Office Complex",
-    code: "DOC-2024-002",
-    location: "Dallas, TX",
-    status: "active",
-    dueDate: "2024-05-20",
-    progress: 32,
-  },
-  {
-    id: "3",
-    name: "Residential Renovation",
-    code: "RR-2024-003",
-    location: "Houston, TX",
-    status: "pending",
-    dueDate: "2024-04-10",
-    progress: 15,
-  },
-];
-
-export function ProjectSidebar({ selectedProject, onSelectProject }: ProjectSidebarProps) {
+export function ProjectSidebar() {
   const [searchValue, setSearchValue] = useState("");
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
   const [newProject, setNewProject] = useState({
     name: "",
     code: "",
@@ -77,16 +38,39 @@ export function ProjectSidebar({ selectedProject, onSelectProject }: ProjectSide
     state: "",
     template: "",
   });
+  
+  const { selectedProject, setSelectedProject } = useAppStore();
+  const { toast } = useToast();
 
-  const filteredProjects = mockProjects.filter((project) =>
+  // Load projects on mount
+  useEffect(() => {
+    loadProjects();
+  }, []);
+
+  const loadProjects = async () => {
+    try {
+      setLoading(true);
+      const data = await listProjects();
+      setProjects(data);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load projects",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredProjects = projects.filter((project) =>
     project.name.toLowerCase().includes(searchValue.toLowerCase()) ||
-    project.code.toLowerCase().includes(searchValue.toLowerCase()) ||
-    project.location.toLowerCase().includes(searchValue.toLowerCase())
+    (project.external_ref || "").toLowerCase().includes(searchValue.toLowerCase())
   );
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "active":
+      case "open":
         return "bg-success";
       case "pending":
         return "bg-warning";
@@ -97,11 +81,32 @@ export function ProjectSidebar({ selectedProject, onSelectProject }: ProjectSide
     }
   };
 
-  const handleCreateProject = () => {
-    // Here you would typically create the project via API
-    console.log("Creating project:", newProject);
-    setShowNewProjectModal(false);
-    setNewProject({ name: "", code: "", city: "", state: "", template: "" });
+  const handleCreateProject = async () => {
+    try {
+      const projectData: CreateProject = {
+        name: newProject.name,
+        code: newProject.code,
+        location: `${newProject.city}, ${newProject.state}`,
+        template_id: newProject.template || undefined,
+      };
+      
+      await createProject(projectData);
+      
+      toast({
+        title: "Success",
+        description: "Project created successfully",
+      });
+      
+      setShowNewProjectModal(false);
+      setNewProject({ name: "", code: "", city: "", state: "", template: "" });
+      loadProjects(); // Refresh the list
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create project",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -209,7 +214,14 @@ export function ProjectSidebar({ selectedProject, onSelectProject }: ProjectSide
 
       {/* Project List */}
       <div className="flex-1 overflow-y-auto p-4 space-y-2">
-        {filteredProjects.map((project) => (
+        {loading ? (
+          <div className="text-center text-muted-foreground py-8">Loading projects...</div>
+        ) : filteredProjects.length === 0 ? (
+          <div className="text-center text-muted-foreground py-8">
+            {projects.length === 0 ? "No projects yet" : "No projects match your search"}
+          </div>
+        ) : (
+          filteredProjects.map((project) => (
           <Card
             key={project.id}
             className={`p-4 cursor-pointer transition-all hover:shadow-md ${
@@ -217,7 +229,7 @@ export function ProjectSidebar({ selectedProject, onSelectProject }: ProjectSide
                 ? "ring-2 ring-primary bg-primary-subtle"
                 : "hover:bg-sidebar-hover"
             }`}
-            onClick={() => onSelectProject(project)}
+            onClick={() => setSelectedProject(project)}
           >
             <div className="space-y-3">
               {/* Project Header */}
@@ -226,7 +238,7 @@ export function ProjectSidebar({ selectedProject, onSelectProject }: ProjectSide
                   <h3 className="font-medium text-sm text-foreground truncate">
                     {project.name}
                   </h3>
-                  <p className="text-xs text-muted-foreground">{project.code}</p>
+                  <p className="text-xs text-muted-foreground">{project.external_ref || 'No code'}</p>
                 </div>
                 <Button variant="ghost" size="sm" className="p-1 h-6 w-6">
                   <MoreVertical className="h-3 w-3" />
@@ -237,11 +249,11 @@ export function ProjectSidebar({ selectedProject, onSelectProject }: ProjectSide
               <div className="space-y-1">
                 <div className="flex items-center text-xs text-muted-foreground">
                   <MapPin className="h-3 w-3 mr-1" />
-                  {project.location}
+                  Location TBD
                 </div>
                 <div className="flex items-center text-xs text-muted-foreground">
                   <Calendar className="h-3 w-3 mr-1" />
-                  Due {project.dueDate}
+                  Created {new Date(project.created_at).toLocaleDateString()}
                 </div>
               </div>
 
@@ -256,17 +268,18 @@ export function ProjectSidebar({ selectedProject, onSelectProject }: ProjectSide
                   <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
                     <div
                       className="h-full bg-primary transition-all"
-                      style={{ width: `${project.progress}%` }}
+                      style={{ width: '0%' }}
                     />
                   </div>
                   <span className="text-xs text-muted-foreground">
-                    {project.progress}%
+                    0%
                   </span>
                 </div>
               </div>
             </div>
           </Card>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );

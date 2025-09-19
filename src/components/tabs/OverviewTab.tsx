@@ -2,20 +2,8 @@ import { AlertTriangle, Calendar, CheckCircle, Clock, Plus, TrendingUp } from "l
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useAppStore } from "@/store/app";
 
-interface Project {
-  id: string;
-  name: string;
-  code: string;
-  location: string;
-  status: string;
-  dueDate: string;
-  progress: number;
-}
-
-interface OverviewTabProps {
-  project: Project;
-}
 
 const quickActions = [
   { label: "Add Daily Log", icon: Plus, color: "bg-primary" },
@@ -40,7 +28,8 @@ const recentLogs = [
   { date: "2024-01-13", author: "Mike Davis", title: "Inspection completed", type: "inspection" },
 ];
 
-export function OverviewTab({ project }: OverviewTabProps) {
+export function OverviewTab() {
+  const { selectedProject } = useAppStore();
   return (
     <div className="p-6 space-y-6">
       {/* Quick Actions */}
@@ -48,7 +37,7 @@ export function OverviewTab({ project }: OverviewTabProps) {
         <CardHeader>
           <CardTitle className="text-lg">Quick Actions</CardTitle>
           <CardDescription>
-            Common actions for {project.name}
+            Common actions for {selectedProject?.name || 'this project'}
           </CardDescription>
         </CardHeader>
         <CardContent>

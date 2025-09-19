@@ -23,16 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-interface Project {
-  id: string;
-  name: string;
-  code: string;
-  location: string;
-  status: string;
-  dueDate: string;
-  progress: number;
-}
+import { useAppStore } from "@/store/app";
 
 interface Todo {
   id: string;
@@ -51,10 +42,6 @@ interface Subtask {
   id: string;
   title: string;
   completed: boolean;
-}
-
-interface TodosTabProps {
-  project: Project;
 }
 
 const mockTodos: Todo[] = [
@@ -108,7 +95,8 @@ const mockTodos: Todo[] = [
   },
 ];
 
-export function TodosTab({ project }: TodosTabProps) {
+export function TodosTab() {
+  const { selectedProject } = useAppStore();
   const [searchValue, setSearchValue] = useState("");
   const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -197,7 +185,7 @@ export function TodosTab({ project }: TodosTabProps) {
             <DialogHeader>
               <DialogTitle>Create New To-Do</DialogTitle>
               <DialogDescription>
-                Add a new task for {project.name}.
+                Add a new task for {selectedProject?.name || 'this project'}.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">

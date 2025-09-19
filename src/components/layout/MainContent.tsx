@@ -8,19 +8,9 @@ import { OverviewTab } from "@/components/tabs/OverviewTab";
 import { DailyLogsTab } from "@/components/tabs/DailyLogsTab";
 import { TodosTab } from "@/components/tabs/TodosTab";
 import { ComingSoonTab } from "@/components/tabs/ComingSoonTab";
-
-interface Project {
-  id: string;
-  name: string;
-  code: string;
-  location: string;
-  status: string;
-  dueDate: string;
-  progress: number;
-}
+import { useAppStore } from "@/store/app";
 
 interface MainContentProps {
-  selectedProject: Project | null;
   activeTab: string;
 }
 
@@ -40,8 +30,9 @@ const projectTabs = [
   { id: "reports", label: "Reports", icon: BarChart3 },
 ];
 
-export function MainContent({ selectedProject, activeTab }: MainContentProps) {
+export function MainContent({ activeTab }: MainContentProps) {
   const [currentTab, setCurrentTab] = useState("overview");
+  const { selectedProject } = useAppStore();
 
   if (!selectedProject) {
     return (
@@ -66,11 +57,11 @@ export function MainContent({ selectedProject, activeTab }: MainContentProps) {
   const renderTabContent = () => {
     switch (currentTab) {
       case "overview":
-        return <OverviewTab project={selectedProject} />;
+        return <OverviewTab />;
       case "daily-logs":
-        return <DailyLogsTab project={selectedProject} />;
+        return <DailyLogsTab />;
       case "todos":
-        return <TodosTab project={selectedProject} />;
+        return <TodosTab />;
       default:
         return <ComingSoonTab tabName={projectTabs.find(tab => tab.id === currentTab)?.label || currentTab} />;
     }
@@ -86,9 +77,9 @@ export function MainContent({ selectedProject, activeTab }: MainContentProps) {
               {selectedProject.name}
             </h1>
             <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-              <span>{selectedProject.code}</span>
+              <span>{selectedProject.external_ref || 'No code'}</span>
               <span>•</span>
-              <span>{selectedProject.location}</span>
+              <span>Created {new Date(selectedProject.created_at).toLocaleDateString()}</span>
               <span>•</span>
               <Badge variant="secondary" className="text-xs">
                 {selectedProject.status}
@@ -99,7 +90,7 @@ export function MainContent({ selectedProject, activeTab }: MainContentProps) {
             <div className="text-right">
               <div className="text-sm text-muted-foreground">Progress</div>
               <div className="text-lg font-semibold text-foreground">
-                {selectedProject.progress}%
+                0%
               </div>
             </div>
             <div className="w-16 h-16 relative">
@@ -115,7 +106,7 @@ export function MainContent({ selectedProject, activeTab }: MainContentProps) {
                   className="text-primary"
                   stroke="currentColor"
                   strokeWidth="3"
-                  strokeDasharray={`${selectedProject.progress}, 100`}
+                  strokeDasharray="0, 100"
                   strokeLinecap="round"
                   fill="none"
                   d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
