@@ -40,16 +40,45 @@ export async function fetchDailyLogsFeed({
     const endDateISO = endDate.toISOString().slice(0, 10);
     const startDateISO = startDate.toISOString().slice(0, 10);
 
-    // Get all logs and execution reports in the date range
-    const { data: feedData, error: feedError } = await supabase
-      .from('v_daily_log_feed')
-      .select('*')
+    // Get daily logs
+    const { data: logsData, error: logsError } = await supabase
+      .from('daily_logs')
+      .select(`
+        id,
+        title,
+        body,
+        created_at,
+        created_by,
+        project_id,
+        media!media_log_id_fkey(id, type, url)
+      `)
       .eq('project_id', projectId)
-      .gte('entry_date', startDateISO)
-      .lte('entry_date', endDateISO)
-      .order('entry_date', { ascending: false });
+      .gte('created_at', startDateISO)
+      .lte('created_at', endDateISO + 'T23:59:59')
+      .order('created_at', { ascending: false });
 
-    if (feedError) throw feedError;
+    if (logsError) throw logsError;
+
+    // Get execution reports with todo and reason details
+    const { data: reportsData, error: reportsError } = await supabase
+      .from('execution_reports')
+      .select(`
+        id,
+        todo_id,
+        status,
+        detail,
+        created_at,
+        created_by,
+        to_dos!inner(id, title, project_id),
+        reasons(id, label),
+        media!media_todo_id_fkey(id, type, url)
+      `)
+      .eq('to_dos.project_id', projectId)
+      .gte('created_at', startDateISO)
+      .lte('created_at', endDateISO + 'T23:59:59')
+      .order('created_at', { ascending: false });
+
+    if (reportsError) throw reportsError;
 
     // Group data by date
     const dayGroups = new Map<string, {
@@ -57,18 +86,34 @@ export async function fetchDailyLogsFeed({
       todos: any[];
     }>();
 
-    feedData?.forEach(item => {
-      const date = item.entry_date!;
+    // Process daily logs
+    logsData?.forEach(log => {
+      const date = log.created_at.slice(0, 10);
       if (!dayGroups.has(date)) {
         dayGroups.set(date, { logs: [], todos: [] });
       }
-      
-      const group = dayGroups.get(date)!;
-      if (item.kind === 'log') {
-        group.logs.push(item);
-      } else if (item.kind === 'execution_report') {
-        group.todos.push(item);
+      dayGroups.get(date)!.logs.push({
+        ...log,
+        entry_date: date,
+        kind: 'log',
+        media_urls: JSON.stringify(log.media || [])
+      });
+    });
+
+    // Process execution reports
+    reportsData?.forEach(report => {
+      const date = report.created_at.slice(0, 10);
+      if (!dayGroups.has(date)) {
+        dayGroups.set(date, { logs: [], todos: [] });
       }
+      dayGroups.get(date)!.todos.push({
+        ...report,
+        entry_date: date,
+        kind: 'execution_report',
+        todo_title: report.to_dos?.title,
+        reason_label: report.reasons?.label,
+        media_urls: JSON.stringify(report.media || [])
+      });
     });
 
     // Calculate missing reports for each day
@@ -106,7 +151,7 @@ export async function fetchDailyLogsFeed({
 
       // Transform logs data
       const transformedLogs: DayLog[] = dayGroup.logs.map(log => ({
-        log_id: log.entry_id!,
+        log_id: log.id!,
         title: log.title!,
         body: log.body,
         created_at: log.entry_date!,
