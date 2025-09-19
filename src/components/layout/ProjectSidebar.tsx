@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Search, Plus, MoreVertical, Pencil, Trash } from "lucide-react";
+import { Search, Plus, MoreHorizontal, Pencil, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -362,7 +362,7 @@ export function ProjectSidebar() {
                       className="h-8 w-8 p-0 ml-2 hover:bg-background/10"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <MoreVertical className="h-4 w-4" />
+                      <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-40">

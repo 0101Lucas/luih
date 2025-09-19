@@ -440,6 +440,7 @@ export type Database = {
           entry_id: string | null
           kind: string | null
           media_count: number | null
+          media_urls: Json | null
           project_id: string | null
           reason_label: string | null
           review_comment: string | null
