@@ -1,8 +1,10 @@
-import React from "react";
-import { Card } from "@/components/ui/card";
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import LogFeedEntry from "../daily-logs/LogFeedEntry";
 import TodoExecutionCard from "../daily-logs/TodoExecutionCard";
+import { CreateNoteModal } from "../daily-logs/CreateNoteModal";
 
 interface DayData {
   date: string;
@@ -15,29 +17,51 @@ interface DayData {
 
 interface DailyLogsFeedProps {
   days: DayData[];
+  projectId: string;
+  onRefresh: () => void;
 }
 
-export default function DailyLogsFeed({ days }: DailyLogsFeedProps) {
+export default function DailyLogsFeed({ days, projectId, onRefresh }: DailyLogsFeedProps) {
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-8">
-      {days.map((day, index) => (
-        <React.Fragment key={day.date}>
-          <DaySection
-            date={day.formattedDate}
-            missingReports={day.missingReports}
-            logs={day.logs}
-            uncompleted={day.uncompleted}
-            completed={day.completed}
-          />
-          {index < days.length - 1 && (
-            <div className="flex items-center gap-4 py-4">
-              <Separator className="flex-1" />
-              <span className="text-xs text-muted-foreground bg-background px-2">•••</span>
-              <Separator className="flex-1" />
-            </div>
-          )}
-        </React.Fragment>
-      ))}
+    <div className="max-w-4xl mx-auto p-6">
+      {/* Header with Create Log button */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-semibold">Daily Logs</h1>
+        <Button onClick={() => setShowCreateModal(true)} className="gap-2">
+          <Plus size={16} />
+          Create Log
+        </Button>
+      </div>
+
+      {/* Feed */}
+      <div className="space-y-8">
+        {days.map((day, index) => (
+          <React.Fragment key={day.date}>
+            <DaySection
+              date={day.formattedDate}
+              missingReports={day.missingReports}
+              logs={day.logs}
+              uncompleted={day.uncompleted}
+              completed={day.completed}
+            />
+            {index < days.length - 1 && (
+              <div className="text-center py-6">
+                <div className="text-muted-foreground font-mono">________________</div>
+              </div>
+            )}
+          </React.Fragment>
+        ))}
+      </div>
+
+      {/* Create Note Modal */}
+      <CreateNoteModal
+        open={showCreateModal}
+        onOpenChange={setShowCreateModal}
+        projectId={projectId}
+        onSuccess={onRefresh}
+      />
     </div>
   );
 }
@@ -56,9 +80,9 @@ function DaySection({
   completed: any[];
 }) {
   return (
-    <Card className="p-6 space-y-6">
+    <div className="space-y-6">
       {/* Day Header */}
-      <div className="space-y-2 border-b border-border pb-4">
+      <div className="space-y-2">
         <h2 className="text-xl font-semibold text-foreground">{date}</h2>
         {missingReports > 0 && (
           <div className="text-sm text-amber-600 dark:text-amber-400">
@@ -70,18 +94,15 @@ function DaySection({
       {/* Logs Section */}
       {logs.length > 0 && (
         <section className="space-y-4">
-          <h3 className="text-lg font-medium text-foreground">Daily Notes</h3>
-          <div className="space-y-4">
-            {logs.map(log => (
-              <LogFeedEntry key={log.entry_id} entry={log} />
-            ))}
-          </div>
+          {logs.map(log => (
+            <LogFeedEntry key={log.entry_id || log.log_id} entry={log} />
+          ))}
         </section>
       )}
 
       {/* Tasks Section */}
       <TasksSection uncompleted={uncompleted} completed={completed} />
-    </Card>
+    </div>
   );
 }
 
@@ -103,22 +124,40 @@ function TasksSection({ uncompleted, completed }: { uncompleted: any[]; complete
             onClick={() => setOpenUncompleted(v => !v)}
           >
             <span className="font-medium text-foreground">
-              Pending Tasks ({uncompleted.length})
-            </span>
-            <span className="text-muted-foreground">
-              {openUncompleted ? "▾" : "▸"}
+              Uncompleted To-Do's ({uncompleted.length}) {openUncompleted ? "▾" : "▸"}
             </span>
           </button>
           {openUncompleted && (
-            <div className="space-y-3 pl-4">
+            <div className="space-y-3 pl-2">
               {uncompleted.map((todo) => (
-                <TodoExecutionCard
-                  key={todo.todo_id}
-                  title={todo.todo_title}
-                  status={formatStatus(todo.exec_status)}
-                  reason={todo.reason_label ?? todo.exec_detail ?? "—"}
-                  media={todo.media_today ?? []}
-                />
+                <div key={todo.todo_id} className="space-y-2">
+                  <div className="font-medium">
+                    {todo.todo_title} — {formatStatus(todo.exec_status)}
+                  </div>
+                  {todo.reason_label && (
+                    <div className="text-sm text-muted-foreground">
+                      Reason: {todo.reason_label}
+                    </div>
+                  )}
+                  {todo.media_today?.length > 0 && (
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Files: </span>
+                      <div className="inline-flex gap-1 flex-wrap">
+                        {todo.media_today.map((media: any, idx: number) => (
+                          <a 
+                            key={idx}
+                            href={media.url} 
+                            target="_blank" 
+                            rel="noreferrer"
+                            className="inline-block px-2 py-1 bg-muted rounded text-xs hover:bg-muted/80"
+                          >
+                            [{media.type === 'photo' ? '📷' : media.type === 'video' ? '🎬' : '📄'} {media.url.split('/').pop()?.split('.')[0] || 'file'}]
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           )}
@@ -133,19 +172,14 @@ function TasksSection({ uncompleted, completed }: { uncompleted: any[]; complete
             onClick={() => setOpenCompleted(v => !v)}
           >
             <span className="font-medium text-foreground">
-              Completed Tasks ({completed.length})
-            </span>
-            <span className="text-muted-foreground">
-              {openCompleted ? "▾" : "▸"}
+              Completed To-Do's ({completed.length}) {openCompleted ? "▾" : "▸"}
             </span>
           </button>
           {openCompleted && (
-            <div className="space-y-2 pl-4">
+            <div className="space-y-2 pl-2">
               {completed.map((todo) => (
-                <div key={todo.todo_id} className="flex items-center gap-2 p-2 bg-muted/30 rounded">
-                  <div className="w-2 h-2 bg-green-500 rounded-full" />
-                  <span className="font-medium text-foreground">{todo.todo_title}</span>
-                  <span className="text-sm text-muted-foreground">— Completed</span>
+                <div key={todo.todo_id} className="font-medium">
+                  {todo.todo_title} — Executed
                 </div>
               ))}
             </div>

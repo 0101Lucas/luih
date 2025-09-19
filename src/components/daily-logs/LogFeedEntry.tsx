@@ -6,17 +6,37 @@ export default function LogFeedEntry({ entry }: { entry: any }) {
   const time = created.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).toLowerCase();
 
   return (
-    <article className="space-y-2 border-b pb-6">
-      <div className="font-semibold">Log Title: {entry.title}</div>
+    <article className="space-y-2">
+      <div className="font-semibold">{entry.title}</div>
       <div className="text-xs text-muted-foreground">
         Created at {time} · by {minify(entry.author_name)}
       </div>
 
-      {entry.body && <Clamp text={entry.body} />}
+      {entry.body && (
+        <div>
+          <span className="text-sm text-muted-foreground">Log Body: </span>
+          <Clamp text={entry.body} />
+        </div>
+      )}
 
-      {entry.attachments?.length ? (
-        <MediaDisplay items={entry.attachments} mode="preview-first" />
-      ) : null}
+      {entry.attachments?.length > 0 && (
+        <div className="space-y-1">
+          <div className="text-sm text-muted-foreground">Attachments:</div>
+          <div className="flex gap-1 flex-wrap">
+            {entry.attachments.map((attachment: any, idx: number) => (
+              <a 
+                key={idx}
+                href={attachment.url} 
+                target="_blank" 
+                rel="noreferrer"
+                className="inline-block px-2 py-1 bg-muted rounded text-xs hover:bg-muted/80"
+              >
+                [{attachment.url.split('/').pop() || 'file'}]
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
     </article>
   );
 }

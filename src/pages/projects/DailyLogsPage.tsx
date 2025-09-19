@@ -21,13 +21,17 @@ export default function DailyLogsPage() {
     }
   }, [selectedProject, projectId, navigate]);
 
-  useEffect(() => {
+  const loadData = () => {
     if (!projectId) return;
     
     setLoading(true);
     fetchDailyLogsFeed({ projectId, daysBack: 7 })
       .then(setDays)
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadData();
   }, [projectId]);
 
   if (!projectId) return null;
@@ -50,7 +54,7 @@ export default function DailyLogsPage() {
       <div className="flex flex-col h-full">
         <ProjectHeader />
         <div className="flex-1 overflow-auto">
-          <DailyLogsFeed days={days} />
+          <DailyLogsFeed days={days} projectId={projectId} onRefresh={loadData} />
         </div>
       </div>
     </ProjectShell>
