@@ -22,19 +22,7 @@ export default function LogFeedEntry({ entry }: { entry: any }) {
       {entry.attachments?.length > 0 && (
         <div className="space-y-1">
           <div className="text-sm text-muted-foreground">Attachments:</div>
-          <div className="flex gap-1 flex-wrap">
-            {entry.attachments.map((attachment: any, idx: number) => (
-              <a 
-                key={idx}
-                href={attachment.url} 
-                target="_blank" 
-                rel="noreferrer"
-                className="inline-block px-2 py-1 bg-muted rounded text-xs hover:bg-muted/80"
-              >
-                [{attachment.url.split('/').pop() || 'file'}]
-              </a>
-            ))}
-          </div>
+          <MediaDisplay items={entry.attachments} mode="preview-first" />
         </div>
       )}
     </article>
