@@ -1,10 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Search, Plus, Filter, MoreVertical, MapPin, Calendar } from "lucide-react";
+import { Search, Plus, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -71,18 +69,6 @@ export function ProjectSidebar() {
     (project.external_ref || "").toLowerCase().includes(searchValue.toLowerCase())
   );
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "open":
-        return "bg-success";
-      case "pending":
-        return "bg-warning";
-      case "completed":
-        return "bg-muted";
-      default:
-        return "bg-muted";
-    }
-  };
 
   const handleCreateProject = async () => {
     try {
@@ -242,7 +228,7 @@ export function ProjectSidebar() {
       </div>
 
       {/* Project List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-2">
+      <div className="flex-1 overflow-y-auto p-4 space-y-1">
         {loading ? (
           <div className="text-center text-muted-foreground py-8">Loading projects...</div>
         ) : filteredProjects.length === 0 ? (
@@ -251,62 +237,26 @@ export function ProjectSidebar() {
           </div>
         ) : (
           filteredProjects.map((project) => (
-          <Card
-            key={project.id}
-            className={`p-4 cursor-pointer transition-all hover:shadow-md ${
-              selectedProject?.id === project.id
-                ? "ring-2 ring-primary bg-primary-subtle"
-                : "hover:bg-sidebar-hover"
-            }`}
-            onClick={() => handleProjectSelect(project)}
-          >
-            <div className="space-y-3">
-              {/* Project Header */}
-              <div className="flex items-start justify-between">
+            <div
+              key={project.id}
+              className={`p-3 cursor-pointer transition-all rounded-md ${
+                selectedProject?.id === project.id
+                  ? "bg-primary text-primary-foreground"
+                  : "hover:bg-sidebar-hover text-foreground"
+              }`}
+              onClick={() => handleProjectSelect(project)}
+            >
+              <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-sm text-foreground truncate">
+                  <h3 className="font-medium text-sm truncate">
                     {project.name}
                   </h3>
-                  <p className="text-xs text-muted-foreground">{project.external_ref || 'No code'}</p>
-                </div>
-                <Button variant="ghost" size="sm" className="p-1 h-6 w-6">
-                  <MoreVertical className="h-3 w-3" />
-                </Button>
-              </div>
-
-              {/* Location and Date */}
-              <div className="space-y-1">
-                <div className="flex items-center text-xs text-muted-foreground">
-                  <MapPin className="h-3 w-3 mr-1" />
-                  Location TBD
-                </div>
-                <div className="flex items-center text-xs text-muted-foreground">
-                  <Calendar className="h-3 w-3 mr-1" />
-                  Created {new Date(project.created_at).toLocaleDateString()}
-                </div>
-              </div>
-
-              {/* Status and Progress */}
-              <div className="flex items-center justify-between">
-                <Badge
-                  className={`text-xs px-2 py-1 ${getStatusColor(project.status)} text-white`}
-                >
-                  {project.status}
-                </Badge>
-                <div className="flex items-center space-x-2">
-                  <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-primary transition-all"
-                      style={{ width: '0%' }}
-                    />
-                  </div>
-                  <span className="text-xs text-muted-foreground">
-                    0%
-                  </span>
+                  {project.external_ref && (
+                    <p className="text-xs opacity-75 truncate">{project.external_ref}</p>
+                  )}
                 </div>
               </div>
             </div>
-          </Card>
           ))
         )}
       </div>
