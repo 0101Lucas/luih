@@ -83,7 +83,7 @@ export function Toolbar({ activeTab, onTabChange }: ToolbarProps) {
           className="flex items-center hover:opacity-80 transition-opacity"
         >
           <img 
-            src="/src/assets/luih-logo.png" 
+            src="/luih-logo.png" 
             alt="LUIH Luxury Homes" 
             className="h-8"
           />
