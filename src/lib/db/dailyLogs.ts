@@ -123,8 +123,8 @@ export async function createNoteLog(params: CreateNoteParams): Promise<void> {
   // Upload files and insert media records
   for (const file of files) {
     const timestamp = Date.now();
-    const fileName = `${timestamp}_${file.name}`;
-    const filePath = `logs/${logData.id}/${fileName}`;
+    const fileName = `${timestamp}-${file.name}`;
+    const filePath = `${projectId}/${logData.id}/${fileName}`;
 
     // Upload to storage
     const { error: uploadError } = await supabase.storage

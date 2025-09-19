@@ -201,7 +201,7 @@ export function CreateNoteModal({ open, onOpenChange, projectId, onSuccess }: Cr
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? "Creating..." : "Create Entry"}
+            {loading ? (files.length > 0 ? "Uploading files..." : "Creating...") : "Create Entry"}
           </Button>
         </DialogFooter>
       </DialogContent>
