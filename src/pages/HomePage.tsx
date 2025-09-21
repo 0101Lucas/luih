@@ -11,7 +11,7 @@ export function HomePage() {
           </div>
           <div className="space-y-2">
             <h2 className="text-2xl font-semibold text-foreground">
-              Welcome to Vibe Code
+              Welcome to LUIH
             </h2>
             <p className="text-muted-foreground max-w-md">
               Select a section from the navigation above to get started.
